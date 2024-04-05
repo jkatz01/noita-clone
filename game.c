@@ -18,7 +18,7 @@ typedef struct {
 void generate_world(Particle **world, int world_size) {
 	for (int i = 0; i < world_size; i++) {
 		for (int j = 0; j < world_size; j++) {
-			if (i > 200 && i < 220 && j > 200 && j < 220) {
+			if (i > 20 && i < 30 && j > 20 && j < 30) {
 
 				world[i][j].type = SAND;	
 			}
@@ -30,11 +30,13 @@ void generate_world(Particle **world, int world_size) {
 }
 
 Color color_lookup(enum ParticleType type) {
-	if (type == AIR) return LIGHTBLUE;
-	else if (type == DIRT) return DARKBROWN;
-	else if (type == SAND) return BROWN;
-	else if (type == EMPTY) return BLACK;
-	else return RED;
+	switch (type) {
+		case AIR: return LIGHTBLUE;
+		case DIRT: return DARKBROWN;
+		case SAND: return BROWN;
+		case EMPTY: return BLACK;
+		default: return RED;
+	}
 }
 
 void update_sand(Particle **world, int x, int y, int world_size) {
@@ -56,14 +58,18 @@ void update_sand(Particle **world, int x, int y, int world_size) {
 }
 void update_me(Particle **world, int x, int y, int world_size) {
 	enum ParticleType my_type = world[y][x].type;
-	if (my_type == SAND) {
-		update_sand(world, x, y, world_size);
+	switch (my_type) {
+		case EMPTY: break;
+		case DIRT: break;
+		case AIR: break;
+		case SAND: update_sand(world, x, y, world_size); break;
 	}
 }
 
 int main() {
-	int world_size = 800;
-	InitWindow(world_size, world_size, "World");
+	int world_size = 100;
+	int screen_size = 800;
+	InitWindow(screen_size, screen_size, "World");
 	SetTargetFPS(300);
 	
 	Particle *_world = (Particle*)malloc(world_size * world_size * sizeof(Particle));
@@ -80,6 +86,8 @@ int main() {
 	// World Generation
 	generate_world(world, world_size);
 
+	int scaled_size = screen_size / world_size;
+	
 	while (!WindowShouldClose()) {
 		BeginDrawing();
 		ClearBackground(DARKGRAY);
@@ -90,7 +98,7 @@ int main() {
 		}
 		for (int i = 0; i < world_size; i++) {
 			for (int j = 0; j < world_size; j++) {
-				DrawPixel(j, i, color_lookup(world[i][j].type));
+				DrawRectangle(j*scaled_size, i*scaled_size, scaled_size, scaled_size, color_lookup(world[i][j].type));
 			}
 		}
 		EndDrawing();
