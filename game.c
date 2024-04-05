@@ -3,6 +3,8 @@
 #include "raylib.h"
 
 #define LIGHTBLUE ColorFromHSV(200, 0.78, 0.92)
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
 
 enum ParticleType {
 	DIRT,
@@ -18,13 +20,41 @@ typedef struct {
 void generate_world(Particle **world, int world_size) {
 	for (int i = 0; i < world_size; i++) {
 		for (int j = 0; j < world_size; j++) {
-			if (i > 20 && i < 30 && j > 20 && j < 30) {
+			if (i > 40 && i < 60 && j > 40 && j < 60) {
 
 				world[i][j].type = SAND;	
 			}
 			else {
 				world[i][j].type = EMPTY;	
 			}
+		}
+	}
+}
+
+void add_sand(Particle **world, int x, int y, int world_size, int brush_size) {
+	if (y < 0 || y >= world_size) {
+		return;
+	}
+	if (x < 0 || x >= world_size) {
+		return;
+	}
+	for (int i = y; i < MIN(world_size, y + brush_size); i++) {
+		for (int j = x; j < MIN(world_size, x + brush_size); j++) { //TODO: handle this better and without a macro
+			world[i][j].type = SAND;
+		}
+	}
+}
+
+void delete_material(Particle **world, int x, int y, int world_size, int brush_size) {
+	if (y < 0 || y >= world_size) {
+		return;
+	}
+	if (x < 0 || x >= world_size) {
+		return;
+	}
+	for (int i = y; i < MIN(world_size, y + brush_size); i++) {
+		for (int j = x; j < MIN(world_size, x + brush_size); j++) {
+			world[i][j].type = EMPTY;
 		}
 	}
 }
@@ -69,6 +99,7 @@ void update_sand(Particle **world, int x, int y, int world_size) {
 		return;
 	} 
 }
+
 void update_me(Particle **world, int x, int y, int world_size) {
 	enum ParticleType my_type = world[y][x].type;
 	switch (my_type) {
@@ -80,7 +111,7 @@ void update_me(Particle **world, int x, int y, int world_size) {
 }
 
 int main() {
-	int world_size = 100;
+	int world_size = 200;
 	int screen_size = 800;
 	int scaled_size = screen_size / world_size;
 
@@ -100,9 +131,15 @@ int main() {
 
 	// World Generation
 	generate_world(world, world_size);
-
+	
+	int mouse_x, mouse_y;
 	
 	while (!WindowShouldClose()) {
+		mouse_x = (int)GetMouseX() / scaled_size;
+		mouse_y = (int)GetMouseY() / scaled_size;
+		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) add_sand(world, mouse_x, mouse_y, world_size, 10);
+		if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) delete_material(world, mouse_x, mouse_y, world_size, 10);
+
 		BeginDrawing();
 		ClearBackground(DARKGRAY);
 		for (int i = world_size-1; i > 0; --i) {
@@ -110,13 +147,11 @@ int main() {
 				update_me(world, j, i, world_size);
 			}
 		}
-		// TODO: render everything at once
 		for (int i = 0; i < world_size; i++) {
 			for (int j = 0; j < world_size; j++) {
 				DrawRectangle(j*scaled_size, i*scaled_size, scaled_size, scaled_size, color_lookup(world[i][j].type));
 			}
 		}
-		if (IsKeyDown(KEY_ENTER)) generate_world(world, world_size);
 		EndDrawing();
 	}
 	CloseWindow();
