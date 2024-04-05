@@ -39,18 +39,31 @@ Color color_lookup(enum ParticleType type) {
 	}
 }
 
+int idx_down_exists(int x, int y, int world_size) {
+	if (y < world_size - 1) return 1;
+	else return 0;
+}
+int idx_down_left_exists(int x, int y, int world_size) {
+	if (y < world_size - 1 && x > 1) return 1;
+	else return 0;
+}
+int idx_down_right_exists(int x, int y, int world_size) {
+	if (y < world_size - 1 && x < world_size - 1) return 1;
+	else return 0;
+}
+
 void update_sand(Particle **world, int x, int y, int world_size) {
-	if (y < world_size-1 && world[y+1][x].type == EMPTY) {
+	if (idx_down_exists(x, y, world_size) && world[y+1][x].type == EMPTY) {
 		world[y+1][x].type = SAND;
 		world[y][x].type = EMPTY;
 		return;
 	}
-	else if (y < world_size-1 && x > 1 && world[y+1][x-1].type == EMPTY) {
+	else if (idx_down_left_exists(x, y, world_size) && world[y+1][x-1].type == EMPTY) {
 		world[y+1][x-1].type = SAND;
 		world[y][x].type = EMPTY;
 		return;
 	}
-	else if (y < world_size-1 && x < world_size - 1 && world[y+1][x+1].type == EMPTY) {
+	else if (idx_down_right_exists(x, y, world_size) && world[y+1][x+1].type == EMPTY) {
 		world[y+1][x+1].type = SAND;
 		world[y][x].type = EMPTY;
 		return;
@@ -69,6 +82,8 @@ void update_me(Particle **world, int x, int y, int world_size) {
 int main() {
 	int world_size = 100;
 	int screen_size = 800;
+	int scaled_size = screen_size / world_size;
+
 	InitWindow(screen_size, screen_size, "World");
 	SetTargetFPS(300);
 	
@@ -86,7 +101,6 @@ int main() {
 	// World Generation
 	generate_world(world, world_size);
 
-	int scaled_size = screen_size / world_size;
 	
 	while (!WindowShouldClose()) {
 		BeginDrawing();
@@ -96,11 +110,13 @@ int main() {
 				update_me(world, j, i, world_size);
 			}
 		}
+		// TODO: render everything at once
 		for (int i = 0; i < world_size; i++) {
 			for (int j = 0; j < world_size; j++) {
 				DrawRectangle(j*scaled_size, i*scaled_size, scaled_size, scaled_size, color_lookup(world[i][j].type));
 			}
 		}
+		if (IsKeyDown(KEY_ENTER)) generate_world(world, world_size);
 		EndDrawing();
 	}
 	CloseWindow();
