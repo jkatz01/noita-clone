@@ -72,6 +72,17 @@ Color color_lookup(enum ParticleType type) {
 	}
 }
 
+int density_lookup(enum ParticleType type) {
+	switch (type) {
+		case AIR: return 1;
+		case DIRT: return 5;
+		case SAND: return 5;
+		case WATER: return 2;
+		case EMPTY: return 0;
+		default: return 0;
+	}
+}
+
 int idx_down_exists(int x, int y, int world_size) {
 	if (y < world_size - 1) return 1;
 	else return 0;
@@ -94,22 +105,22 @@ int idx_down_right_exists(int x, int y, int world_size) {
 }
 
 void update_sand(Particle **world, int x, int y, int world_size) {
-	if (idx_down_exists(x, y, world_size) && world[y+1][x].type == EMPTY) {
+	if (idx_down_exists(x, y, world_size) && density_lookup(world[y+1][x].type) < density_lookup(world[y][x].type)) {
+		world[y][x].type = world[y+1][x].type;
 		world[y+1][x].type = SAND;
 		world[y+1][x].updated = 1;
-		world[y][x].type = EMPTY;
 		return;
 	}
-	else if (idx_down_left_exists(x, y, world_size) && world[y+1][x-1].type == EMPTY) {
+	else if (idx_down_left_exists(x, y, world_size) &&density_lookup(world[y+1][x-1].type) < density_lookup(world[y][x].type)) {
+		world[y][x].type = world[y+1][x-1].type;
 		world[y+1][x-1].type = SAND;
 		world[y+1][x-1].updated = 1;
-		world[y][x].type = EMPTY;
 		return;
 	}
-	else if (idx_down_right_exists(x, y, world_size) && world[y+1][x+1].type == EMPTY) {
+	else if (idx_down_right_exists(x, y, world_size) &&density_lookup(world[y+1][x+1].type) < density_lookup(world[y][x].type)) {
+		world[y][x].type = world[y+1][x+1].type;
 		world[y+1][x+1].type = SAND;
 		world[y+1][x+1].updated = 1;
-		world[y][x].type = EMPTY;
 		return;
 	} 
 }
@@ -163,12 +174,12 @@ void update_me(Particle **world, int x, int y, int world_size) {
 }
 
 int main() {
-	int world_size = 200;
+	int world_size = 100;
 	int screen_size = 800;
 	int scaled_size = screen_size / world_size;
 
 	InitWindow(screen_size, screen_size, "World");
-	SetTargetFPS(300);
+	SetTargetFPS(60);
 	
 	Particle *_world = (Particle*)malloc(world_size * world_size * sizeof(Particle));
 	if (!_world) return -1;
