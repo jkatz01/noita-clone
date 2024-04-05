@@ -7,7 +7,7 @@
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 
 enum ParticleType {
-	DIRT,
+	STONE,
 	SAND,
 	AIR,
 	WATER,
@@ -64,7 +64,7 @@ void delete_material(Particle **world, int x, int y, int world_size, int brush_s
 Color color_lookup(enum ParticleType type) {
 	switch (type) {
 		case AIR: return LIGHTBLUE;
-		case DIRT: return DARKBROWN;
+		case STONE: return DARKBROWN;
 		case SAND: return BROWN;
 		case WATER: return BLUE;
 		case EMPTY: return BLACK;
@@ -75,7 +75,7 @@ Color color_lookup(enum ParticleType type) {
 int density_lookup(enum ParticleType type) {
 	switch (type) {
 		case AIR: return 1;
-		case DIRT: return 5;
+		case STONE: return 5;
 		case SAND: return 5;
 		case WATER: return 2;
 		case EMPTY: return 0;
@@ -124,7 +124,11 @@ void update_sand(Particle **world, int x, int y, int world_size) {
 		return;
 	} 
 }
-
+void move_right(Particle **world, int x, int y) {
+	world[y][x+1].type = WATER;
+	world[y][x+1].updated = 1;
+	world[y][x].type = EMPTY;
+}
 void update_water(Particle **world, int x, int y, int world_size) {
 	if (idx_down_exists(x, y, world_size) && world[y+1][x].type == EMPTY) {
 		world[y+1][x].type = WATER;
@@ -144,17 +148,25 @@ void update_water(Particle **world, int x, int y, int world_size) {
 		world[y][x].type = EMPTY;
 		return;
 	} 
-	else if (idx_left_exists(x, y, world_size) && world[y][x-1].type == EMPTY) {
-		world[y][x-1].type = WATER;
-		world[y][x-1].updated = 1;
-		world[y][x].type = EMPTY;
-		return;
-	} 
-	else if (idx_right_exists(x, y, world_size) && world[y][x+1].type == EMPTY) {
-		world[y][x+1].type = WATER;
-		world[y][x+1].updated = 1;
-		world[y][x].type = EMPTY;
-		return;
+	if (idx_left_exists(x, y, world_size) && world[y][x-1].type == EMPTY) {
+		if (idx_left_exists(x-1, y, world_size) && world[y][x-2].type != EMPTY) {
+			;	
+		}
+		else {
+			world[y][x-1].type = WATER;
+			world[y][x-1].updated = 1;
+			world[y][x].type = EMPTY;
+			return;
+		}
+	}
+	if (idx_right_exists(x, y, world_size) && world[y][x+1].type == EMPTY) {
+		if (idx_right_exists(x+1, y, world_size) && world[y][x+2].type != EMPTY) {
+			;
+		}
+		else {
+			move_right(world, x, y);
+			return;
+		}
 	} 
 }
 
@@ -166,7 +178,7 @@ void update_me(Particle **world, int x, int y, int world_size) {
 	}
 	switch (my_type) {
 		case EMPTY: break;
-		case DIRT: break;
+		case STONE: break;
 		case AIR: break;
 		case SAND: update_sand(world, x, y, world_size); break;
 		case WATER: update_water(world, x, y, world_size); break;
@@ -179,7 +191,7 @@ int main() {
 	int scaled_size = screen_size / world_size;
 
 	InitWindow(screen_size, screen_size, "World");
-	SetTargetFPS(60);
+	SetTargetFPS(0);
 	
 	Particle *_world = (Particle*)malloc(world_size * world_size * sizeof(Particle));
 	if (!_world) return -1;
@@ -196,19 +208,24 @@ int main() {
 	generate_world(world, world_size);
 	
 	int mouse_x, mouse_y;
-	
+	enum ParticleType materials[3] = {SAND, WATER, STONE};
+	enum ParticleType m_choice = SAND;
+
 	while (!WindowShouldClose()) {
 		mouse_x = (int)GetMouseX() / scaled_size;
 		mouse_y = (int)GetMouseY() / scaled_size;
-		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) add_material(world, mouse_x, mouse_y, world_size, 10, SAND);
-		if (IsMouseButtonDown(MOUSE_BUTTON_MIDDLE)) add_material(world, mouse_x, mouse_y, world_size, 10, WATER);
-		if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) delete_material(world, mouse_x, mouse_y, world_size, 10);
+		if (IsKeyPressed(KEY_ONE)) m_choice = materials[0];
+		else if (IsKeyPressed(KEY_TWO)) m_choice = materials[1];
+		else if (IsKeyPressed(KEY_THREE)) m_choice = materials[2];
+		
+		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) add_material(world, mouse_x, mouse_y, world_size, 5, m_choice);
+		if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) delete_material(world, mouse_x, mouse_y, world_size, 5);
 
 		//TODO: add world context struct
 
 		BeginDrawing();
 		ClearBackground(DARKGRAY);
-		for (int i = 0; i < world_size; i++) {
+		for (int i = world_size-1; i > 0 ; --i) {
 			for (int j = 0; j < world_size; j++) {
 				update_me(world, j, i, world_size);
 			}
@@ -218,6 +235,8 @@ int main() {
 				DrawRectangle(j*scaled_size, i*scaled_size, scaled_size, scaled_size, color_lookup(world[i][j].type));
 			}
 		}
+
+		DrawText("1 - Sand | 2 - Water | 3 - Stone | RMB - Delete", 100, 40, 24, WHITE);
 		EndDrawing();
 	}
 	CloseWindow();
