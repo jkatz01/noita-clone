@@ -13,21 +13,17 @@ enum ParticleType {
 
 typedef struct {
 	enum ParticleType type;
-	enum ParticleType next_type;
-	int updated;
 } Particle;
 
 void generate_world(Particle **world, int world_size) {
 	for (int i = 0; i < world_size; i++) {
 		for (int j = 0; j < world_size; j++) {
-			if (i > 200 && i < 400 && j > 200 && j < 400) {
+			if (i > 200 && i < 220 && j > 200 && j < 220) {
 
 				world[i][j].type = SAND;	
-				world[i][j].updated = 0;	
 			}
 			else {
 				world[i][j].type = EMPTY;	
-				world[i][j].updated = 0;	
 			}
 		}
 	}
@@ -43,26 +39,20 @@ Color color_lookup(enum ParticleType type) {
 
 void update_sand(Particle **world, int x, int y, int world_size) {
 	if (y < world_size-1 && world[y+1][x].type == EMPTY) {
-		world[y+1][x].next_type = SAND;
-		world[y+1][x].updated = 1;
-		world[y][x].next_type = EMPTY;
-		world[y][x].updated = 1;
+		world[y+1][x].type = SAND;
+		world[y][x].type = EMPTY;
 		return;
 	}
 	else if (y < world_size-1 && x > 1 && world[y+1][x-1].type == EMPTY) {
-		world[y+1][x-1].next_type = SAND;
-		world[y+1][x-1].updated = 1;
-		world[y][x].next_type = EMPTY;
-		world[y][x].updated = 1;
+		world[y+1][x-1].type = SAND;
+		world[y][x].type = EMPTY;
 		return;
 	}
 	else if (y < world_size-1 && x < world_size - 1 && world[y+1][x+1].type == EMPTY) {
-		world[y+1][x+1].next_type = SAND;
-		world[y+1][x+1].updated = 1;
-		world[y][x].next_type = EMPTY;
-		world[y][x].updated = 1;
+		world[y+1][x+1].type = SAND;
+		world[y][x].type = EMPTY;
 		return;
-	}
+	} 
 }
 void update_me(Particle **world, int x, int y, int world_size) {
 	enum ParticleType my_type = world[y][x].type;
@@ -70,17 +60,11 @@ void update_me(Particle **world, int x, int y, int world_size) {
 		update_sand(world, x, y, world_size);
 	}
 }
-void update_apply(Particle **world, int x, int y, int world_size) {
-	if (world[y][x].updated) {
-		world[y][x].type = world[y][x].next_type;
-		world[y][x].updated = 0;
-	}
-}
 
 int main() {
 	int world_size = 800;
 	InitWindow(world_size, world_size, "World");
-	SetTargetFPS(60);
+	SetTargetFPS(300);
 	
 	Particle *_world = (Particle*)malloc(world_size * world_size * sizeof(Particle));
 	if (!_world) return -1;
@@ -99,15 +83,14 @@ int main() {
 	while (!WindowShouldClose()) {
 		BeginDrawing();
 		ClearBackground(DARKGRAY);
-		for (int i = 0; i < world_size; i++) {
+		for (int i = world_size-1; i > 0; --i) {
 			for (int j = 0; j < world_size; j++) {
 				update_me(world, j, i, world_size);
-				DrawPixel(j, i, color_lookup(world[i][j].type));
 			}
 		}
 		for (int i = 0; i < world_size; i++) {
 			for (int j = 0; j < world_size; j++) {
-				update_apply(world, j, i, world_size);
+				DrawPixel(j, i, color_lookup(world[i][j].type));
 			}
 		}
 		EndDrawing();
