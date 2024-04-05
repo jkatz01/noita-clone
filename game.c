@@ -42,7 +42,9 @@ void add_material(Particle **world, int x, int y, int world_size, int brush_size
 	}
 	for (int i = y; i < MIN(world_size, y + brush_size); i++) {
 		for (int j = x; j < MIN(world_size, x + brush_size); j++) { //TODO: handle this better and without a macro
-			world[i][j].type = mt_type;
+			if (world[i][j].type == EMPTY) {
+				world[i][j].type = mt_type;
+			}
 		}
 	}
 }
@@ -88,11 +90,11 @@ int idx_down_exists(int x, int y, int world_size) {
 	else return 0;
 }
 int idx_left_exists(int x, int y, int world_size) {
-	if (x > 1) return 1;
+	if (x > 0) return 1;
 	else return 0;
 }
 int idx_down_left_exists(int x, int y, int world_size) {
-	if (y < world_size - 1 && x > 1) return 1;
+	if (y < world_size - 1 && x > 0) return 1;
 	else return 0;
 }
 int idx_right_exists(int x, int y, int world_size) {
@@ -104,30 +106,49 @@ int idx_down_right_exists(int x, int y, int world_size) {
 	else return 0;
 }
 
+void move_down(Particle **world, int x, int y) {
+	enum ParticleType r_type = world[y+1][x].type;
+	world[y+1][x].type = world[y][x].type;
+	world[y+1][x].updated = 1;
+	world[y][x].type = r_type;
+}
+void move_down_right(Particle **world, int x, int y) {
+	enum ParticleType r_type = world[y+1][x+1].type;
+	world[y+1][x+1].type = world[y][x].type;
+	world[y+1][x+1].updated = 1;
+	world[y][x].type = r_type;
+}
+void move_down_left(Particle **world, int x, int y) {
+	enum ParticleType r_type = world[y+1][x-1].type;
+	world[y+1][x-1].type = world[y][x].type;
+	world[y+1][x-1].updated = 1;
+	world[y][x].type = r_type;
+}
+void move_right(Particle **world, int x, int y) {
+	enum ParticleType r_type = world[y][x+1].type;
+	world[y][x+1].type = world[y][x].type;
+	world[y][x+1].updated = 1;
+	world[y][x].type = r_type;
+}
+void move_left(Particle **world, int x, int y) {
+	enum ParticleType r_type = world[y][x-1].type;
+	world[y][x-1].type = world[y][x].type;
+	world[y][x-1].updated = 1;
+	world[y][x].type = r_type;
+}
 void update_sand(Particle **world, int x, int y, int world_size) {
 	if (idx_down_exists(x, y, world_size) && density_lookup(world[y+1][x].type) < density_lookup(world[y][x].type)) {
-		world[y][x].type = world[y+1][x].type;
-		world[y+1][x].type = SAND;
-		world[y+1][x].updated = 1;
+		move_down(world, x, y);
 		return;
 	}
 	else if (idx_down_left_exists(x, y, world_size) &&density_lookup(world[y+1][x-1].type) < density_lookup(world[y][x].type)) {
-		world[y][x].type = world[y+1][x-1].type;
-		world[y+1][x-1].type = SAND;
-		world[y+1][x-1].updated = 1;
+		move_down_left(world,x, y);
 		return;
 	}
 	else if (idx_down_right_exists(x, y, world_size) &&density_lookup(world[y+1][x+1].type) < density_lookup(world[y][x].type)) {
-		world[y][x].type = world[y+1][x+1].type;
-		world[y+1][x+1].type = SAND;
-		world[y+1][x+1].updated = 1;
+		move_down_right(world, x, y);
 		return;
 	} 
-}
-void move_right(Particle **world, int x, int y) {
-	world[y][x+1].type = WATER;
-	world[y][x+1].updated = 1;
-	world[y][x].type = EMPTY;
 }
 void update_water(Particle **world, int x, int y, int world_size) {
 	if (idx_down_exists(x, y, world_size) && world[y+1][x].type == EMPTY) {
@@ -153,9 +174,7 @@ void update_water(Particle **world, int x, int y, int world_size) {
 			;	
 		}
 		else {
-			world[y][x-1].type = WATER;
-			world[y][x-1].updated = 1;
-			world[y][x].type = EMPTY;
+			move_left(world, x, y);
 			return;
 		}
 	}
@@ -217,6 +236,7 @@ int main() {
 		if (IsKeyPressed(KEY_ONE)) m_choice = materials[0];
 		else if (IsKeyPressed(KEY_TWO)) m_choice = materials[1];
 		else if (IsKeyPressed(KEY_THREE)) m_choice = materials[2];
+		else if (IsKeyPressed(KEY_ENTER)) generate_world(world, world_size);
 		
 		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) add_material(world, mouse_x, mouse_y, world_size, 5, m_choice);
 		if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) delete_material(world, mouse_x, mouse_y, world_size, 5);
