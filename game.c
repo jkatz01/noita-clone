@@ -49,9 +49,12 @@ int three_min(int x, int y, int z) {
 	return val;
 }
 
-void add_material(Particle **world, int x, int y, int world_size, int brush_size, enum ParticleType mt_type) {
+void add_material(Particle **world, int x, int y, int world_size, int brush_size, enum ParticleType mt_type, int mouse_held) {
 	static int previous_x, previous_y;
-
+	if (mouse_held == 0) {
+		previous_x = x;
+		previous_y = y;
+	}
 	if (y < 0 || y >= world_size) {
 		return;
 	}
@@ -59,15 +62,15 @@ void add_material(Particle **world, int x, int y, int world_size, int brush_size
 		return;
 	}
 	BeginDrawing();
-	DrawRectangleLines(x*scaled_size - 10, y*scaled_size - 10, 20, 20, GREEN);
-	DrawRectangleLines(previous_x*scaled_size - 10, previous_y*scaled_size - 10, 20, 20, BLUE);
+	DrawRectangleLines(x*scaled_size - (brush_size/2), y*scaled_size - (brush_size/2), brush_size, brush_size, GREEN);
+	DrawRectangleLines(previous_x*scaled_size - (brush_size/2), previous_y*scaled_size - (brush_size/2), brush_size, brush_size, BLUE);
 	Vector2 startPos = {x*scaled_size, y*scaled_size};
 	Vector2 endPos = {previous_x*scaled_size, previous_y*scaled_size};
 
 	for (int i = 0; i < world_size; i++) {
 		for (int j = 0; j < world_size; j++) {
 			DrawRectangleLines(MIN(previous_x, x)*scaled_size, MIN(previous_y, y)*scaled_size, (MAX(previous_x, x) - MIN(previous_x, x))*scaled_size, (MAX(previous_y, y) - MIN(previous_y, y))*scaled_size, GREEN);
-			if (CheckCollisionPointLine((Vector2){ j*scaled_size, i*scaled_size } ,startPos, endPos, 20)) {
+			if (CheckCollisionPointLine((Vector2){ j*scaled_size, i*scaled_size } ,startPos, endPos, brush_size)) {
 				world[i][j].type = mt_type;
 			}
 			
@@ -81,18 +84,33 @@ void add_material(Particle **world, int x, int y, int world_size, int brush_size
 }
 
 
-void delete_material(Particle **world, int x, int y, int world_size, int brush_size) {
+void delete_material(Particle **world, int x, int y, int world_size, int brush_size, int mouse_held) {
+	static int previous_x, previous_y;
+	if (mouse_held == 0) {
+		previous_x = x;
+		previous_y = y;
+	}
 	if (y < 0 || y >= world_size) {
 		return;
 	}
 	if (x < 0 || x >= world_size) {
 		return;
 	}
-	for (int i = y; i < MIN(world_size, y + brush_size); i++) {
-		for (int j = x; j < MIN(world_size, x + brush_size); j++) {
-			world[i][j].type = EMPTY;
+	Vector2 startPos = {x*scaled_size, y*scaled_size};
+	Vector2 endPos = {previous_x*scaled_size, previous_y*scaled_size};
+
+	for (int i = 0; i < world_size; i++) {
+		for (int j = 0; j < world_size; j++) {
+			DrawRectangleLines(MIN(previous_x, x)*scaled_size, MIN(previous_y, y)*scaled_size, (MAX(previous_x, x) - MIN(previous_x, x))*scaled_size, (MAX(previous_y, y) - MIN(previous_y, y))*scaled_size, GREEN);
+			if (CheckCollisionPointLine((Vector2){ j*scaled_size, i*scaled_size } ,startPos, endPos, brush_size)) {
+				world[i][j].type = EMPTY;
+			}
+			
 		}
 	}
+
+	previous_x = x;
+	previous_y = y;
 }
 
 Color color_lookup(enum ParticleType type) {
@@ -253,6 +271,9 @@ int main() {
 	int mouse_x, mouse_y;
 	enum ParticleType materials[3] = {SAND, WATER, STONE};
 	enum ParticleType m_choice = SAND;
+	
+	int l_mouse_held_last_frame = 0;
+	int r_mouse_held_last_frame = 0;
 
 	while (!WindowShouldClose()) {
 		mouse_x = (int)GetMouseX() / scaled_size;
@@ -261,10 +282,21 @@ int main() {
 		else if (IsKeyPressed(KEY_TWO)) {m_choice = materials[1]; printf("Key two pressed\n");}
 		else if (IsKeyPressed(KEY_THREE)) m_choice = materials[2];
 		else if (IsKeyPressed(KEY_ENTER)) generate_world(world, world_size);
-		
-		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) add_material(world, mouse_x, mouse_y, world_size, 5, m_choice);
-		if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) delete_material(world, mouse_x, mouse_y, world_size, 5);
 
+		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+			add_material(world, mouse_x, mouse_y, world_size, 15, m_choice, l_mouse_held_last_frame);
+			l_mouse_held_last_frame = 1;
+		}
+		else {
+			l_mouse_held_last_frame = 0;
+		}
+		if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
+			delete_material(world, mouse_x, mouse_y, world_size, 15, r_mouse_held_last_frame);
+			r_mouse_held_last_frame = 1;
+		}
+		else {
+			r_mouse_held_last_frame = 0;
+		}
 		//TODO: add world context struct
 
 		BeginDrawing();
