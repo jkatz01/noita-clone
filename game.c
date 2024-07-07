@@ -203,21 +203,30 @@ void move_left(Particle **world, int x, int y) {
 	world[y][x-1].updated = 1;
 	world[y][x] = r_part;
 }
-void update_sand(Particle **world, int x, int y, int world_size) {
+void update_powder(Particle **world, int x, int y, int world_size) {
 	if (idx_down_exists(x, y, world_size) && density_lookup(world[y+1][x].type) < density_lookup(world[y][x].type)) {
+		if (world[y+1][x].updated == 1) {
+			return;
+		}
 		move_down(world, x, y);
 		return;
 	}
 	else if (idx_down_left_exists(x, y, world_size) &&density_lookup(world[y+1][x-1].type) < density_lookup(world[y][x].type)) {
+		if (world[y+1][x-1].updated == 1) {
+			return;
+		}
 		move_down_left(world,x, y);
 		return;
 	}
 	else if (idx_down_right_exists(x, y, world_size) &&density_lookup(world[y+1][x+1].type) < density_lookup(world[y][x].type)) {
+		if (world[y+1][x+1].updated == 1) {
+			return;
+		}
 		move_down_right(world, x, y);
 		return;
 	} 
 }
-void update_water(Particle **world, int x, int y, int world_size) {
+void update_liquid(Particle **world, int x, int y, int world_size) {
 	if (idx_down_exists(x, y, world_size) && world[y+1][x].type == EMPTY) {
 		move_down(world, x, y);
 		return;
@@ -248,8 +257,8 @@ void update_me(Particle **world, int x, int y, int world_size) {
 		case EMPTY: break;
 		case STONE: break;
 		case AIR: break;
-		case SAND: update_sand(world, x, y, world_size); break;
-		case WATER: update_water(world, x, y, world_size); break;
+		case SAND: update_powder(world, x, y, world_size); break;
+		case WATER: update_liquid(world, x, y, world_size); break;
 	}
 }
 
