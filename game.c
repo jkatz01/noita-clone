@@ -15,7 +15,7 @@
 
 #define WATER_BLUE       CLITERAL(Color){ 0, 121, 241, 150 } 
 
-const int world_size = 200;
+const int world_size = 100;
 const int screen_size = 800;
 const int scaled_size = screen_size / world_size;
 
@@ -24,6 +24,7 @@ enum ParticleType {
 	SAND,
 	AIR,
 	WATER,
+	LAVA,
 	EMPTY
 };
 
@@ -46,6 +47,7 @@ Color color_lookup(enum ParticleType type) {
 		case STONE: return DARKBROWN;
 		case SAND: return ColorBrightness(BROWN, rand_range(-0.3, 0.3));
 		case WATER: return ColorBrightness(WATER_BLUE, rand_range(-0.1, 0.1));
+		case LAVA: return ColorTint(ColorBrightness(RED, rand_range(0, 0.3)), ORANGE);
 		case EMPTY: return CLITERAL(Color){ 0, 0, 0, 20 } ;
 		default: return RED;
 	}
@@ -57,6 +59,7 @@ int density_lookup(enum ParticleType type) {
 		case STONE: return 5;
 		case SAND: return 5;
 		case WATER: return 2;
+		case LAVA: return 4;
 		case EMPTY: return 0;
 		default: return 0;
 	}
@@ -182,8 +185,8 @@ int idx_down_right_exists(int x, int y, int world_size) {
 	else return 0;
 }
 
-void move_down(Particle **world, int x, int y) {
 
+void move_down(Particle **world, int x, int y) {
 	Particle r_part = world[y+1][x];
 	world[y+1][x] = world[y][x];
 	world[y+1][x].updated = 1;
@@ -238,22 +241,22 @@ void update_powder(Particle **world, int x, int y, int world_size) {
 	} 
 }
 void update_liquid(Particle **world, int x, int y, int world_size) {
-	if (idx_down_exists(x, y, world_size) && world[y+1][x].type == EMPTY) {
+	if (idx_down_exists(x, y, world_size) &&density_lookup(world[y+1][x].type) < density_lookup(world[y][x].type)) {
 		move_down(world, x, y);
 		return;
 	}
-	else if (idx_down_left_exists(x, y, world_size) && world[y+1][x-1].type == EMPTY) {
+	else if (idx_down_left_exists(x, y, world_size) &&density_lookup(world[y+1][x-1].type) < density_lookup(world[y][x].type)) {
 		move_down_left(world,x, y);
 		return;
 	}
-	else if (idx_down_right_exists(x, y, world_size) && world[y+1][x+1].type == EMPTY) {
+	else if (idx_down_right_exists(x, y, world_size) &&density_lookup(world[y+1][x+1].type) < density_lookup(world[y][x].type)) {
 		move_down_right(world, x, y);
 		return;
 	} 
-	if (idx_left_exists(x, y, world_size) && world[y][x-1].type == EMPTY) {
+	if (idx_left_exists(x, y, world_size) &&density_lookup(world[y][x-1].type) < density_lookup(world[y][x].type)) {
 		move_left(world, x, y);
 	}
-	if (idx_right_exists(x, y, world_size) && world[y][x+1].type == EMPTY) {
+	if (idx_right_exists(x, y, world_size) &&density_lookup(world[y][x+1].type) < density_lookup(world[y][x].type)) {
 		move_right(world, x, y);
 	}
 }
@@ -270,6 +273,7 @@ void update_me(Particle **world, int x, int y, int world_size) {
 		case AIR: break;
 		case SAND: update_powder(world, x, y, world_size); break;
 		case WATER: update_liquid(world, x, y, world_size); break;
+		case LAVA: update_liquid(world, x, y, world_size); break;
 	}
 }
 
@@ -294,7 +298,7 @@ int main() {
 	generate_world(world, world_size);
 	
 	int mouse_x, mouse_y;
-	enum ParticleType materials[3] = {SAND, WATER, STONE};
+	enum ParticleType materials[4] = {SAND, WATER, STONE, LAVA};
 	enum ParticleType m_choice = SAND;
 	
 	int l_mouse_held_last_frame = 0;
@@ -318,6 +322,7 @@ int main() {
 		if (IsKeyPressed(KEY_ONE)) m_choice = materials[0];
 		else if (IsKeyPressed(KEY_TWO)) {m_choice = materials[1];}
 		else if (IsKeyPressed(KEY_THREE)) m_choice = materials[2];
+		else if (IsKeyPressed(KEY_FOUR)) m_choice = materials[3];
 		else if (IsKeyPressed(KEY_J)) generate_world(world, world_size);
 		else if (IsKeyPressed(KEY_B)) brush_size += 5;
 		else if (IsKeyPressed(KEY_V)) brush_size -= 5;
@@ -359,7 +364,10 @@ int main() {
 			}
 		}
 
-		DrawText("1 - Sand | 2 - Water | 3 - Stone | RMB - Delete \n\nB/V - Brush | ENTER - Toggle | J - Reset", 100, 40, 24, WHITE);
+		DrawText("1 - Sand | 2 - Water | 3 - Stone | 4 - Lava | RMB - Delete \n\nB/V - Brush | ENTER - Toggle | J - Reset", 100, 40, 24, WHITE);
+		char fps_msg[8];
+		_itoa_s(GetFPS(), fps_msg, 8, 10);
+		DrawText(fps_msg, 600, 160, 40, BLACK);
 		EndDrawing();
 	}
 	CloseWindow();
