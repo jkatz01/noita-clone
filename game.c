@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include "raylib.h"
 
 #define LIGHTBLUE ColorFromHSV(200, 0.78, 0.92)
@@ -27,17 +28,49 @@ enum ParticleType {
 typedef struct {
 	enum ParticleType type;
 	int updated; // Updated this frame
+	Color color;
 } Particle;
+
+float rand_range(float min, float max)
+{
+	float random = (float)rand() / RAND_MAX;
+	float range = max - min;
+	return (random * range) + min;
+}
+
+Color color_lookup(enum ParticleType type) {
+	switch (type) {
+		case AIR: return LIGHTBLUE;
+		case STONE: return DARKBROWN;
+		case SAND: return ColorBrightness(BROWN, rand_range(-0.3, 0.3));
+		case WATER: return ColorBrightness(BLUE, rand_range(-0.1, 0.1));
+		case EMPTY: return BLACK;
+		default: return RED;
+	}
+}
+
+int density_lookup(enum ParticleType type) {
+	switch (type) {
+		case AIR: return 1;
+		case STONE: return 5;
+		case SAND: return 5;
+		case WATER: return 2;
+		case EMPTY: return 0;
+		default: return 0;
+	}
+}
 
 void generate_world(Particle **world, int world_size) {
 	for (int i = 0; i < world_size; i++) {
 		for (int j = 0; j < world_size; j++) {
 			world[i][j].updated = 0;
 			if (i > 40 && i < 60 && j > 40 && j < 60) {
-				world[i][j].type = SAND;	
+				world[i][j].type = SAND;
+				world[i][j].color = color_lookup(SAND);
 			}
 			else {
 				world[i][j].type = EMPTY;	
+				world[i][j].color = color_lookup(EMPTY);
 			}
 		}
 	}
@@ -61,22 +94,26 @@ void add_material(Particle **world, int x, int y, int world_size, int brush_size
 	if (x < 0 || x >= world_size) {
 		return;
 	}
-	BeginDrawing();
-	DrawRectangleLines(x*scaled_size - (brush_size/2), y*scaled_size - (brush_size/2), brush_size, brush_size, GREEN);
-	DrawRectangleLines(previous_x*scaled_size - (brush_size/2), previous_y*scaled_size - (brush_size/2), brush_size, brush_size, BLUE);
 	Vector2 startPos = {x*scaled_size, y*scaled_size};
 	Vector2 endPos = {previous_x*scaled_size, previous_y*scaled_size};
+	
+	if (previous_x == x  && previous_y == y) {
+		x += brush_size/scaled_size;
+		y += brush_size/scaled_size;
+	}
 
 	for (int i = 0; i < world_size; i++) {
 		for (int j = 0; j < world_size; j++) {
 			DrawRectangleLines(MIN(previous_x, x)*scaled_size, MIN(previous_y, y)*scaled_size, (MAX(previous_x, x) - MIN(previous_x, x))*scaled_size, (MAX(previous_y, y) - MIN(previous_y, y))*scaled_size, GREEN);
 			if (CheckCollisionPointLine((Vector2){ j*scaled_size, i*scaled_size } ,startPos, endPos, brush_size)) {
-				world[i][j].type = mt_type;
+				if(world[i][j].type == EMPTY) {
+					world[i][j].type = mt_type;
+					world[i][j].color = color_lookup(mt_type);
+				}
 			}
 			
 		}
 	}
-	EndDrawing();
 
 	previous_x = x;
 	previous_y = y;
@@ -113,28 +150,6 @@ void delete_material(Particle **world, int x, int y, int world_size, int brush_s
 	previous_y = y;
 }
 
-Color color_lookup(enum ParticleType type) {
-	switch (type) {
-		case AIR: return LIGHTBLUE;
-		case STONE: return DARKBROWN;
-		case SAND: return BROWN;
-		case WATER: return BLUE;
-		case EMPTY: return BLACK;
-		default: return RED;
-	}
-}
-
-int density_lookup(enum ParticleType type) {
-	switch (type) {
-		case AIR: return 1;
-		case STONE: return 5;
-		case SAND: return 5;
-		case WATER: return 2;
-		case EMPTY: return 0;
-		default: return 0;
-	}
-}
-
 int idx_down_exists(int x, int y, int world_size) {
 	if (y < world_size - 1) return 1;
 	else return 0;
@@ -157,34 +172,36 @@ int idx_down_right_exists(int x, int y, int world_size) {
 }
 
 void move_down(Particle **world, int x, int y) {
-	enum ParticleType r_type = world[y+1][x].type;
-	world[y+1][x].type = world[y][x].type;
+
+	Particle r_part = world[y+1][x];
+	world[y+1][x] = world[y][x];
 	world[y+1][x].updated = 1;
-	world[y][x].type = r_type;
+	world[y][x] = r_part;
 }
 void move_down_right(Particle **world, int x, int y) {
-	enum ParticleType r_type = world[y+1][x+1].type;
-	world[y+1][x+1].type = world[y][x].type;
+	Particle r_part = world[y+1][x+1];
+	world[y+1][x+1] = world[y][x];
 	world[y+1][x+1].updated = 1;
-	world[y][x].type = r_type;
+	world[y][x] = r_part;
 }
 void move_down_left(Particle **world, int x, int y) {
-	enum ParticleType r_type = world[y+1][x-1].type;
-	world[y+1][x-1].type = world[y][x].type;
+	Particle r_part = world[y+1][x-1];
+	world[y+1][x-1] = world[y][x];
 	world[y+1][x-1].updated = 1;
-	world[y][x].type = r_type;
+	world[y][x] = r_part;
 }
 void move_right(Particle **world, int x, int y) {
-	enum ParticleType r_type = world[y][x+1].type;
-	world[y][x+1].type = world[y][x].type;
+	Particle r_part = world[y][x+1];
+	world[y][x+1] = world[y][x];
 	world[y][x+1].updated = 1;
-	world[y][x].type = r_type;
+	world[y][x] = r_part;
 }
 void move_left(Particle **world, int x, int y) {
-	enum ParticleType r_type = world[y][x-1].type;
-	world[y][x-1].type = world[y][x].type;
+	
+	Particle r_part = world[y][x-1];
+	world[y][x-1] = world[y][x];
 	world[y][x-1].updated = 1;
-	world[y][x].type = r_type;
+	world[y][x] = r_part;
 }
 void update_sand(Particle **world, int x, int y, int world_size) {
 	if (idx_down_exists(x, y, world_size) && density_lookup(world[y+1][x].type) < density_lookup(world[y][x].type)) {
@@ -215,23 +232,9 @@ void update_water(Particle **world, int x, int y, int world_size) {
 	} 
 	if (idx_left_exists(x, y, world_size) && world[y][x-1].type == EMPTY) {
 		move_left(world, x, y);
-		/*if (idx_left_exists(x-1, y, world_size) && world[y][x-2].type != EMPTY) {
-			;	
-		}
-		else {
-			move_left(world, x, y);
-			return;
-		}*/
 	}
 	if (idx_right_exists(x, y, world_size) && world[y][x+1].type == EMPTY) {
 		move_right(world, x, y);
-		/*if (idx_right_exists(x+1, y, world_size) && world[y][x+2].type != EMPTY) {
-			;
-		}
-		else {
-			move_right(world, x, y);
-			return;
-		}*/
 	}
 }
 
@@ -254,6 +257,8 @@ int main() {
 
 	InitWindow(screen_size, screen_size, "World");
 	SetTargetFPS(0);
+	
+	srand(time(NULL));
 	
 	Particle *_world = (Particle*)malloc(world_size * world_size * sizeof(Particle));
 	if (!_world) return -1;
@@ -308,7 +313,7 @@ int main() {
 		}
 		for (int i = 0; i < world_size; i++) {
 			for (int j = 0; j < world_size; j++) {
-				DrawRectangle(j*scaled_size, i*scaled_size, scaled_size, scaled_size, color_lookup(world[i][j].type));
+				DrawRectangle(j*scaled_size, i*scaled_size, scaled_size, scaled_size, world[i][j].color);
 			}
 		}
 
