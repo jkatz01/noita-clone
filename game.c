@@ -12,6 +12,10 @@
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 
+const int world_size = 200;
+const int screen_size = 800;
+const int scaled_size = screen_size / world_size;
+
 enum ParticleType {
 	STONE,
 	SAND,
@@ -39,20 +43,41 @@ void generate_world(Particle **world, int world_size) {
 	}
 }
 
+int three_min(int x, int y, int z) {
+	int val = MIN(x, y);
+	val = MIN(val, z);
+	return val;
+}
+
 void add_material(Particle **world, int x, int y, int world_size, int brush_size, enum ParticleType mt_type) {
+	static int previous_x, previous_y;
+
 	if (y < 0 || y >= world_size) {
 		return;
 	}
 	if (x < 0 || x >= world_size) {
 		return;
 	}
-	for (int i = y; i < MIN(world_size, y + brush_size); i++) {
-		for (int j = x; j < MIN(world_size, x + brush_size); j++) { 
-			if (world[i][j].type == EMPTY) {
+	BeginDrawing();
+	DrawRectangleLines(x*scaled_size - 10, y*scaled_size - 10, 20, 20, GREEN);
+	DrawRectangleLines(previous_x*scaled_size - 10, previous_y*scaled_size - 10, 20, 20, BLUE);
+	Vector2 startPos = {x*scaled_size, y*scaled_size};
+	Vector2 endPos = {previous_x*scaled_size, previous_y*scaled_size};
+
+	for (int i = 0; i < world_size; i++) {
+		for (int j = 0; j < world_size; j++) {
+			DrawRectangleLines(MIN(previous_x, x)*scaled_size, MIN(previous_y, y)*scaled_size, (MAX(previous_x, x) - MIN(previous_x, x))*scaled_size, (MAX(previous_y, y) - MIN(previous_y, y))*scaled_size, GREEN);
+			if (CheckCollisionPointLine((Vector2){ j*scaled_size, i*scaled_size } ,startPos, endPos, 20)) {
 				world[i][j].type = mt_type;
 			}
+			
 		}
 	}
+	EndDrawing();
+
+	previous_x = x;
+	previous_y = y;
+	
 }
 
 
@@ -208,9 +233,6 @@ void update_me(Particle **world, int x, int y, int world_size) {
 }
 
 int main() {
-	int world_size = 200;
-	int screen_size = 800;
-	int scaled_size = screen_size / world_size;
 
 	InitWindow(screen_size, screen_size, "World");
 	SetTargetFPS(0);
@@ -241,7 +263,7 @@ int main() {
 		else if (IsKeyPressed(KEY_ENTER)) generate_world(world, world_size);
 		
 		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) add_material(world, mouse_x, mouse_y, world_size, 5, m_choice);
-		if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) delete_material(world, mouse_x, mouse_y, world_size, ybe y5);
+		if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) delete_material(world, mouse_x, mouse_y, world_size, 5);
 
 		//TODO: add world context struct
 
