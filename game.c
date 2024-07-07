@@ -13,6 +13,8 @@
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 
+#define WATER_BLUE       CLITERAL(Color){ 0, 121, 241, 150 } 
+
 const int world_size = 200;
 const int screen_size = 800;
 const int scaled_size = screen_size / world_size;
@@ -43,8 +45,8 @@ Color color_lookup(enum ParticleType type) {
 		case AIR: return LIGHTBLUE;
 		case STONE: return DARKBROWN;
 		case SAND: return ColorBrightness(BROWN, rand_range(-0.3, 0.3));
-		case WATER: return ColorBrightness(BLUE, rand_range(-0.1, 0.1));
-		case EMPTY: return BLACK;
+		case WATER: return ColorBrightness(WATER_BLUE, rand_range(-0.1, 0.1));
+		case EMPTY: return CLITERAL(Color){ 0, 0, 0, 20 } ;
 		default: return RED;
 	}
 }
@@ -94,13 +96,16 @@ void add_material(Particle **world, int x, int y, int world_size, int brush_size
 	if (x < 0 || x >= world_size) {
 		return;
 	}
-	Vector2 startPos = {x*scaled_size, y*scaled_size};
-	Vector2 endPos = {previous_x*scaled_size, previous_y*scaled_size};
 	
 	if (previous_x == x  && previous_y == y) {
 		x += brush_size/scaled_size;
 		y += brush_size/scaled_size;
 	}
+	
+	Vector2 startPos = {x*scaled_size, y*scaled_size};
+	Vector2 endPos = {previous_x*scaled_size, previous_y*scaled_size};
+	
+
 
 	for (int i = 0; i < world_size; i++) {
 		for (int j = 0; j < world_size; j++) {
@@ -133,6 +138,11 @@ void delete_material(Particle **world, int x, int y, int world_size, int brush_s
 	if (x < 0 || x >= world_size) {
 		return;
 	}
+	if (previous_x == x  && previous_y == y) {
+		x += brush_size/scaled_size;
+		y += brush_size/scaled_size;
+	}
+	
 	Vector2 startPos = {x*scaled_size, y*scaled_size};
 	Vector2 endPos = {previous_x*scaled_size, previous_y*scaled_size};
 
@@ -141,6 +151,7 @@ void delete_material(Particle **world, int x, int y, int world_size, int brush_s
 			DrawRectangleLines(MIN(previous_x, x)*scaled_size, MIN(previous_y, y)*scaled_size, (MAX(previous_x, x) - MIN(previous_x, x))*scaled_size, (MAX(previous_y, y) - MIN(previous_y, y))*scaled_size, GREEN);
 			if (CheckCollisionPointLine((Vector2){ j*scaled_size, i*scaled_size } ,startPos, endPos, brush_size)) {
 				world[i][j].type = EMPTY;
+				world[i][j].color = color_lookup(EMPTY);
 			}
 			
 		}
@@ -288,6 +299,13 @@ int main() {
 	
 	int l_mouse_held_last_frame = 0;
 	int r_mouse_held_last_frame = 0;
+	
+	Image buddyworld = LoadImage("assets/buddyworld.png");
+	//ImageCrop(&buddyworld, (Rectangle){ 100, 10, 280, 380 });      // Crop an image piece
+    //ImageFlipHorizontal(&buddyworld);                              // Flip cropped image horizontally
+    ImageResize(&buddyworld, 800, 900);                            // Resize flipped-cropped image
+	Texture2D bg_texture = LoadTextureFromImage(buddyworld);
+	UnloadImage(buddyworld);
 
 	while (!WindowShouldClose()) {
 		mouse_x = (int)GetMouseX() / scaled_size;
@@ -311,10 +329,15 @@ int main() {
 		else {
 			r_mouse_held_last_frame = 0;
 		}
-		//TODO: add world context struct
+		
+		//TODO: change the collision to work based on speed
+		
 
 		BeginDrawing();
 		ClearBackground(DARKGRAY);
+		
+		DrawTexture(bg_texture, screen_size/2 - bg_texture.width/2, screen_size/2 - bg_texture.height/2 - 40, WHITE);
+		
 		for (int i = world_size-1; i > 0 ; --i) {
 			for (int j = 0; j < world_size; j++) {
 				update_me(world, j, i, world_size);
