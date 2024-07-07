@@ -300,30 +300,37 @@ int main() {
 	int l_mouse_held_last_frame = 0;
 	int r_mouse_held_last_frame = 0;
 	
-	Image buddyworld = LoadImage("assets/buddyworld.png");
+	Image buddyworld = LoadImage("assets/beautifu.png");
 	//ImageCrop(&buddyworld, (Rectangle){ 100, 10, 280, 380 });      // Crop an image piece
     //ImageFlipHorizontal(&buddyworld);                              // Flip cropped image horizontally
     ImageResize(&buddyworld, 800, 900);                            // Resize flipped-cropped image
 	Texture2D bg_texture = LoadTextureFromImage(buddyworld);
 	UnloadImage(buddyworld);
+	
+	int brush_size = 10;
+	int simulate = 1;
 
 	while (!WindowShouldClose()) {
 		mouse_x = (int)GetMouseX() / scaled_size;
 		mouse_y = (int)GetMouseY() / scaled_size;
+		
+		if (IsKeyPressed(KEY_ENTER)) simulate = (1 - simulate);
 		if (IsKeyPressed(KEY_ONE)) m_choice = materials[0];
-		else if (IsKeyPressed(KEY_TWO)) {m_choice = materials[1]; printf("Key two pressed\n");}
+		else if (IsKeyPressed(KEY_TWO)) {m_choice = materials[1];}
 		else if (IsKeyPressed(KEY_THREE)) m_choice = materials[2];
-		else if (IsKeyPressed(KEY_ENTER)) generate_world(world, world_size);
+		else if (IsKeyPressed(KEY_J)) generate_world(world, world_size);
+		else if (IsKeyPressed(KEY_B)) brush_size += 5;
+		else if (IsKeyPressed(KEY_V)) brush_size -= 5;
 
 		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-			add_material(world, mouse_x, mouse_y, world_size, 15, m_choice, l_mouse_held_last_frame);
+			add_material(world, mouse_x, mouse_y, world_size, brush_size, m_choice, l_mouse_held_last_frame);
 			l_mouse_held_last_frame = 1;
 		}
 		else {
 			l_mouse_held_last_frame = 0;
 		}
 		if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
-			delete_material(world, mouse_x, mouse_y, world_size, 15, r_mouse_held_last_frame);
+			delete_material(world, mouse_x, mouse_y, world_size, brush_size, r_mouse_held_last_frame);
 			r_mouse_held_last_frame = 1;
 		}
 		else {
@@ -338,9 +345,12 @@ int main() {
 		
 		DrawTexture(bg_texture, screen_size/2 - bg_texture.width/2, screen_size/2 - bg_texture.height/2 - 40, WHITE);
 		
-		for (int i = world_size-1; i > 0 ; --i) {
-			for (int j = 0; j < world_size; j++) {
-				update_me(world, j, i, world_size);
+		if (simulate)
+		{
+			for (int i = world_size-1; i > 0 ; --i) {
+				for (int j = 0; j < world_size; j++) {
+					update_me(world, j, i, world_size);
+				}
 			}
 		}
 		for (int i = 0; i < world_size; i++) {
@@ -349,7 +359,7 @@ int main() {
 			}
 		}
 
-		DrawText("1 - Sand | 2 - Water | 3 - Stone | RMB - Delete", 100, 40, 24, WHITE);
+		DrawText("1 - Sand | 2 - Water | 3 - Stone | RMB - Delete \n\nB/V - Brush | ENTER - Toggle | J - Reset", 100, 40, 24, WHITE);
 		EndDrawing();
 	}
 	CloseWindow();
