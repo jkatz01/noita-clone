@@ -28,6 +28,10 @@ enum ParticleType {
 	EMPTY
 };
 
+typedef struct  {
+	int up_left, left, down_left, down, down_right, right, up_right, up;
+} PixelSurroundings;
+
 typedef struct {
 	enum ParticleType type;
 	int updated; // Updated this frame
@@ -164,27 +168,15 @@ void delete_material(Particle **world, int x, int y, int world_size, int brush_s
 	previous_y = y;
 }
 
-int idx_down_exists(int x, int y, int world_size) {
-	if (y < world_size - 1) return 1;
-	else return 0;
+PixelSurroundings check_surroundings_exist(int x, int y, int world_size) {
+	PixelSurroundings me = {0, 0, 0, 0, 0, 0, 0, 0};
+	if (y < world_size - 1) me.down = 1;
+	if (x > 0) me.left = 1;
+	if (y < world_size - 1 && x > 0) me.down_left = 1;
+	if (x < world_size-1) me.right = 1;
+	if (y < world_size - 1 && x < world_size - 1) me.down_right = 1;
+	return me;
 }
-int idx_left_exists(int x, int y, int world_size) {
-	if (x > 0) return 1;
-	else return 0;
-}
-int idx_down_left_exists(int x, int y, int world_size) {
-	if (y < world_size - 1 && x > 0) return 1;
-	else return 0;
-}
-int idx_right_exists(int x, int y, int world_size) {
-	if (x < world_size-1) return 1;
-	else return 0;
-}
-int idx_down_right_exists(int x, int y, int world_size) {
-	if (y < world_size - 1 && x < world_size - 1) return 1;
-	else return 0;
-}
-
 
 void move_down(Particle **world, int x, int y) {
 	Particle r_part = world[y+1][x];
@@ -218,21 +210,22 @@ void move_left(Particle **world, int x, int y) {
 	world[y][x] = r_part;
 }
 void update_powder(Particle **world, int x, int y, int world_size) {
-	if (idx_down_exists(x, y, world_size) && density_lookup(world[y+1][x].type) < density_lookup(world[y][x].type)) {
+	PixelSurroundings my_pos = check_surroundings_exist(x, y, world_size);
+	if (my_pos.down && density_lookup(world[y+1][x].type) < density_lookup(world[y][x].type)) {
 		if (world[y+1][x].updated == 1) {
 			return;
 		}
 		move_down(world, x, y);
 		return;
 	}
-	else if (idx_down_left_exists(x, y, world_size) &&density_lookup(world[y+1][x-1].type) < density_lookup(world[y][x].type)) {
+	else if (my_pos.down_left &&density_lookup(world[y+1][x-1].type) < density_lookup(world[y][x].type)) {
 		if (world[y+1][x-1].updated == 1) {
 			return;
 		}
 		move_down_left(world,x, y);
 		return;
 	}
-	else if (idx_down_right_exists(x, y, world_size) &&density_lookup(world[y+1][x+1].type) < density_lookup(world[y][x].type)) {
+	else if (my_pos.down_right &&density_lookup(world[y+1][x+1].type) < density_lookup(world[y][x].type)) {
 		if (world[y+1][x+1].updated == 1) {
 			return;
 		}
@@ -241,22 +234,23 @@ void update_powder(Particle **world, int x, int y, int world_size) {
 	} 
 }
 void update_liquid(Particle **world, int x, int y, int world_size) {
-	if (idx_down_exists(x, y, world_size) &&density_lookup(world[y+1][x].type) < density_lookup(world[y][x].type)) {
+	PixelSurroundings my_pos = check_surroundings_exist(x, y, world_size);
+	if (my_pos.down &&density_lookup(world[y+1][x].type) < density_lookup(world[y][x].type)) {
 		move_down(world, x, y);
 		return;
 	}
-	else if (idx_down_left_exists(x, y, world_size) &&density_lookup(world[y+1][x-1].type) < density_lookup(world[y][x].type)) {
+	else if (my_pos.down_left &&density_lookup(world[y+1][x-1].type) < density_lookup(world[y][x].type)) {
 		move_down_left(world,x, y);
 		return;
 	}
-	else if (idx_down_right_exists(x, y, world_size) &&density_lookup(world[y+1][x+1].type) < density_lookup(world[y][x].type)) {
+	else if (my_pos.down_right &&density_lookup(world[y+1][x+1].type) < density_lookup(world[y][x].type)) {
 		move_down_right(world, x, y);
 		return;
 	} 
-	if (idx_left_exists(x, y, world_size) &&density_lookup(world[y][x-1].type) < density_lookup(world[y][x].type)) {
+	if (my_pos.left &&density_lookup(world[y][x-1].type) < density_lookup(world[y][x].type)) {
 		move_left(world, x, y);
 	}
-	if (idx_right_exists(x, y, world_size) &&density_lookup(world[y][x+1].type) < density_lookup(world[y][x].type)) {
+	if (my_pos.right &&density_lookup(world[y][x+1].type) < density_lookup(world[y][x].type)) {
 		move_right(world, x, y);
 	}
 }
