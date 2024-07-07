@@ -1,3 +1,9 @@
+/*
+ * by: dominus
+ * heheuhh
+ */
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "raylib.h"
@@ -41,13 +47,14 @@ void add_material(Particle **world, int x, int y, int world_size, int brush_size
 		return;
 	}
 	for (int i = y; i < MIN(world_size, y + brush_size); i++) {
-		for (int j = x; j < MIN(world_size, x + brush_size); j++) { //TODO: handle this better and without a macro
+		for (int j = x; j < MIN(world_size, x + brush_size); j++) { 
 			if (world[i][j].type == EMPTY) {
 				world[i][j].type = mt_type;
 			}
 		}
 	}
 }
+
 
 void delete_material(Particle **world, int x, int y, int world_size, int brush_size) {
 	if (y < 0 || y >= world_size) {
@@ -152,41 +159,37 @@ void update_sand(Particle **world, int x, int y, int world_size) {
 }
 void update_water(Particle **world, int x, int y, int world_size) {
 	if (idx_down_exists(x, y, world_size) && world[y+1][x].type == EMPTY) {
-		world[y+1][x].type = WATER;
-		world[y+1][x].updated = 1;
-		world[y][x].type = EMPTY;
+		move_down(world, x, y);
 		return;
 	}
 	else if (idx_down_left_exists(x, y, world_size) && world[y+1][x-1].type == EMPTY) {
-		world[y+1][x-1].type = WATER;
-		world[y+1][x-1].updated = 1;
-		world[y][x].type = EMPTY;
+		move_down_left(world,x, y);
 		return;
 	}
 	else if (idx_down_right_exists(x, y, world_size) && world[y+1][x+1].type == EMPTY) {
-		world[y+1][x+1].type = WATER;
-		world[y+1][x+1].updated = 1;
-		world[y][x].type = EMPTY;
+		move_down_right(world, x, y);
 		return;
 	} 
 	if (idx_left_exists(x, y, world_size) && world[y][x-1].type == EMPTY) {
-		if (idx_left_exists(x-1, y, world_size) && world[y][x-2].type != EMPTY) {
+		move_left(world, x, y);
+		/*if (idx_left_exists(x-1, y, world_size) && world[y][x-2].type != EMPTY) {
 			;	
 		}
 		else {
 			move_left(world, x, y);
 			return;
-		}
+		}*/
 	}
 	if (idx_right_exists(x, y, world_size) && world[y][x+1].type == EMPTY) {
-		if (idx_right_exists(x+1, y, world_size) && world[y][x+2].type != EMPTY) {
+		move_right(world, x, y);
+		/*if (idx_right_exists(x+1, y, world_size) && world[y][x+2].type != EMPTY) {
 			;
 		}
 		else {
 			move_right(world, x, y);
 			return;
-		}
-	} 
+		}*/
+	}
 }
 
 void update_me(Particle **world, int x, int y, int world_size) {
@@ -205,7 +208,7 @@ void update_me(Particle **world, int x, int y, int world_size) {
 }
 
 int main() {
-	int world_size = 100;
+	int world_size = 200;
 	int screen_size = 800;
 	int scaled_size = screen_size / world_size;
 
@@ -223,7 +226,6 @@ int main() {
 		world[i] = &(_world[i*world_size]);
 	}
 
-	// World Generation
 	generate_world(world, world_size);
 	
 	int mouse_x, mouse_y;
@@ -234,12 +236,12 @@ int main() {
 		mouse_x = (int)GetMouseX() / scaled_size;
 		mouse_y = (int)GetMouseY() / scaled_size;
 		if (IsKeyPressed(KEY_ONE)) m_choice = materials[0];
-		else if (IsKeyPressed(KEY_TWO)) m_choice = materials[1];
+		else if (IsKeyPressed(KEY_TWO)) {m_choice = materials[1]; printf("Key two pressed\n");}
 		else if (IsKeyPressed(KEY_THREE)) m_choice = materials[2];
 		else if (IsKeyPressed(KEY_ENTER)) generate_world(world, world_size);
 		
 		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) add_material(world, mouse_x, mouse_y, world_size, 5, m_choice);
-		if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) delete_material(world, mouse_x, mouse_y, world_size, 5);
+		if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) delete_material(world, mouse_x, mouse_y, world_size, ybe y5);
 
 		//TODO: add world context struct
 
