@@ -15,9 +15,11 @@
 
 #define WATER_BLUE       CLITERAL(Color){ 0, 121, 241, 150 } 
 
-const int world_size = 100;
+const int world_size = 200;
 const int screen_size = 800;
 const int scaled_size = screen_size / world_size;
+
+const int gravity = 2;
 
 enum ParticleType {
 	STONE,
@@ -36,6 +38,7 @@ typedef struct {
 	enum ParticleType type;
 	int updated; // Updated this frame
 	Color color;
+	Vector2 velocity;
 } Particle;
 
 float rand_range(float min, float max)
@@ -167,8 +170,8 @@ void delete_material(Particle **world, int x, int y, int world_size, int brush_s
 	previous_x = x;
 	previous_y = y;
 }
-
-PixelSurroundings check_surroundings_exist(int x, int y, int world_size) {
+//up_left, , , , , , up_right, up;
+PixelSurroundings check_bounds(int x, int y, int world_size) {
 	PixelSurroundings me = {0, 0, 0, 0, 0, 0, 0, 0};
 	if (y < world_size - 1) me.down = 1;
 	if (x > 0) me.left = 1;
@@ -199,18 +202,50 @@ void move_down_left(Particle **world, int x, int y) {
 void move_right(Particle **world, int x, int y) {
 	Particle r_part = world[y][x+1];
 	world[y][x+1] = world[y][x];
-	world[y][x+1].updated = 1;
+	//world[y][x+1].updated = 1;
 	world[y][x] = r_part;
+	printf("move_right\n");
 }
 void move_left(Particle **world, int x, int y) {
 	
 	Particle r_part = world[y][x-1];
 	world[y][x-1] = world[y][x];
-	world[y][x-1].updated = 1;
+	//world[y][x-1].updated = 1;
 	world[y][x] = r_part;
 }
+
+void move_by_velocity(Particle **world, int x, int y, Vector2 vel) {
+	int cur_x = x;
+	int desired_x = x + (int)vel.x;
+	int desired_y = y + (int)vel.y;
+	
+	
+	if (desired_x > world_size) desired_x=world_size;
+	if (desired_x < 0) 			desired_x = 0;
+	
+	
+	while (cur_x != desired_x) {
+		if (vel.x < 0) { 						//move this if statement to outside the while loop
+			if (world[y][cur_x-1].type == EMPTY) {
+				move_left(world, cur_x, y);
+				cur_x--;
+			}
+			else break;
+		}
+		else if (vel.x > 0) {
+			if (world[y][cur_x+1].type == EMPTY) {
+				move_right(world, cur_x, y);
+				cur_x++;
+			}
+			else break;
+		}
+	}
+	world[y][cur_x].updated = 1;
+	printf("exit loop\n");
+}
+
 void update_powder(Particle **world, int x, int y, int world_size) {
-	PixelSurroundings my_pos = check_surroundings_exist(x, y, world_size);
+	PixelSurroundings my_pos = check_bounds(x, y, world_size);
 	if (my_pos.down && density_lookup(world[y+1][x].type) < density_lookup(world[y][x].type)) {
 		if (world[y+1][x].updated == 1) {
 			return;
@@ -234,25 +269,34 @@ void update_powder(Particle **world, int x, int y, int world_size) {
 	} 
 }
 void update_liquid(Particle **world, int x, int y, int world_size) {
-	PixelSurroundings my_pos = check_surroundings_exist(x, y, world_size);
+	PixelSurroundings my_pos = check_bounds(x, y, world_size);
+	//int odd = x % 2;
+	//if odd()
 	if (my_pos.down &&density_lookup(world[y+1][x].type) < density_lookup(world[y][x].type)) {
 		move_down(world, x, y);
 		return;
 	}
-	else if (my_pos.down_left &&density_lookup(world[y+1][x-1].type) < density_lookup(world[y][x].type)) {
+	if (my_pos.down_left &&density_lookup(world[y+1][x-1].type) < density_lookup(world[y][x].type)) {
 		move_down_left(world,x, y);
 		return;
 	}
-	else if (my_pos.down_right &&density_lookup(world[y+1][x+1].type) < density_lookup(world[y][x].type)) {
+	if (my_pos.down_right &&density_lookup(world[y+1][x+1].type) < density_lookup(world[y][x].type)) {
 		move_down_right(world, x, y);
 		return;
 	} 
 	if (my_pos.left &&density_lookup(world[y][x-1].type) < density_lookup(world[y][x].type)) {
-		move_left(world, x, y);
+		Vector2 test_vel = {-5, 0};
+		move_by_velocity(world, x, y, test_vel);
+		//move_left(world, x, y);
+		return;
 	}
-	if (my_pos.right &&density_lookup(world[y][x+1].type) < density_lookup(world[y][x].type)) {
-		move_right(world, x, y);
+	else if (my_pos.right &&density_lookup(world[y][x+1].type) < density_lookup(world[y][x].type)) {
+		Vector2 test_vel = {5, 0};
+		move_by_velocity(world, x, y, test_vel);
+		//move_right(world, x, y);
+		return;
 	}
+	
 }
 
 void update_me(Particle **world, int x, int y, int world_size) {
@@ -301,7 +345,7 @@ int main() {
 	Image buddyworld = LoadImage("assets/beautifu.png");
 	//ImageCrop(&buddyworld, (Rectangle){ 100, 10, 280, 380 });      // Crop an image piece
     //ImageFlipHorizontal(&buddyworld);                              // Flip cropped image horizontally
-    ImageResize(&buddyworld, 800, 900);                            // Resize flipped-cropped image
+    ImageResize(&buddyworld, screen_size, screen_size+100);                            // Resize flipped-cropped image
 	Texture2D bg_texture = LoadTextureFromImage(buddyworld);
 	UnloadImage(buddyworld);
 	
