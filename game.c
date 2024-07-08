@@ -62,11 +62,11 @@ Color color_lookup(enum ParticleType type) {
 
 int density_lookup(enum ParticleType type) {
 	switch (type) {
-		case AIR: return 1;
-		case STONE: return 5;
-		case SAND: return 5;
-		case WATER: return 2;
-		case LAVA: return 4;
+		case AIR: return 0;
+		case STONE: return 3;
+		case SAND: return 3;
+		case WATER: return 1;
+		case LAVA: return 2;
 		case EMPTY: return 0;
 		default: return 0;
 	}
@@ -216,19 +216,28 @@ void move_left(Particle **world, int x, int y) {
 void move_by_velocity(Particle **world, int x, int y, Vector2 vel) {
 	int cur_x = x;
 	int cur_y = y;
+	
+	if (vel.y > 1 && cur_y < world_size-2 && density_lookup(world[cur_y][cur_x].type) - density_lookup(world[cur_y-1][cur_x].type) == 1) {
+		if (x % 2 == 0) vel.x += 5;
+		else 			vel.x -= 5;
+		vel.y -= 1;
+	}
+	
 	int desired_x = x + (int)vel.x;
 	int desired_y = y + (int)vel.y;
 	
 	
 	if (desired_x > world_size) desired_x=world_size;
 	if (desired_x < 0) 			desired_x = 0;
-	if (desired_y > world_size-1) desired_y=world_size-2;
+	if (desired_y > world_size-1) desired_y=world_size-1;
 	if (desired_y < 0) 			desired_y = 0;
+	
+	
 	
 	// X direction
 	if (vel.x < 0) {
 		while (cur_x != desired_x) {
-			if (world[cur_y][cur_x-1].type == EMPTY) {
+			if (density_lookup(world[cur_y][cur_x-1].type) < density_lookup(world[cur_y][cur_x].type)) {
 				move_left(world, cur_x, cur_y);
 				cur_x--;
 			}
@@ -237,7 +246,7 @@ void move_by_velocity(Particle **world, int x, int y, Vector2 vel) {
 	}
 	else if (vel.x > 0) {
 		while (cur_x != desired_x) {
-			if (world[cur_y][cur_x+1].type == EMPTY) {
+			if (density_lookup(world[cur_y][cur_x+1].type) < density_lookup(world[cur_y][cur_x].type)) {
 				move_right(world, cur_x, cur_y);
 				cur_x++;
 			}
@@ -251,7 +260,7 @@ void move_by_velocity(Particle **world, int x, int y, Vector2 vel) {
 	}
 	else if (vel.y > 0) {
 		while (cur_y != desired_y) {
-			if (world[cur_y+1][cur_x].type == EMPTY) {
+			if (density_lookup(world[cur_y+1][cur_x].type) < density_lookup(world[cur_y][cur_x].type)) {
 				move_down(world, cur_x, cur_y);
 				cur_y++;
 			}
@@ -267,21 +276,24 @@ void update_powder(Particle **world, int x, int y, int world_size) {
 		if (world[y+1][x].updated == 1) {
 			return;
 		}
-		move_down(world, x, y);
+		Vector2 test_vel = {0, 3};
+		move_by_velocity(world, x, y, test_vel);
 		return;
 	}
 	else if (my_pos.down_left &&density_lookup(world[y+1][x-1].type) < density_lookup(world[y][x].type)) {
 		if (world[y+1][x-1].updated == 1) {
 			return;
 		}
-		move_down_left(world,x, y);
+		Vector2 test_vel = {-2, 3};
+		move_by_velocity(world, x, y, test_vel);
 		return;
 	}
 	else if (my_pos.down_right &&density_lookup(world[y+1][x+1].type) < density_lookup(world[y][x].type)) {
 		if (world[y+1][x+1].updated == 1) {
 			return;
 		}
-		move_down_right(world, x, y);
+		Vector2 test_vel = {2, 3};
+		move_by_velocity(world, x, y, test_vel);
 		return;
 	} 
 }
@@ -290,34 +302,29 @@ void update_liquid(Particle **world, int x, int y, int world_size) {
 	//int odd = x % 2;
 	//if odd()
 	if (my_pos.down &&density_lookup(world[y+1][x].type) < density_lookup(world[y][x].type)) {
-		Vector2 test_vel = {0, 1};
+		Vector2 test_vel = {0, 3};
 		move_by_velocity(world, x, y, test_vel);
-		//move_down(world, x, y);
 		return;
 	}
 	
 	if (my_pos.down_right &&density_lookup(world[y+1][x+1].type) < density_lookup(world[y][x].type)) {
-		Vector2 test_vel = {4, 1};
+		Vector2 test_vel = {4, 3};
 		move_by_velocity(world, x, y, test_vel);
-		//move_down_right(world, x, y);
 		return;
 	} 
 	if (my_pos.down_left &&density_lookup(world[y+1][x-1].type) < density_lookup(world[y][x].type)) {
-		Vector2 test_vel = {-4, 1};
+		Vector2 test_vel = {-4, 3};
 		move_by_velocity(world, x, y, test_vel);
-		//move_down_left(world,x, y);
 		return;
 	}
 	if (my_pos.right &&density_lookup(world[y][x+1].type) < density_lookup(world[y][x].type)) {
 		Vector2 test_vel = {4, 0};
 		move_by_velocity(world, x, y, test_vel);
-		//move_right(world, x, y);
 		return;
 	}
 	if (my_pos.left &&density_lookup(world[y][x-1].type) < density_lookup(world[y][x].type)) {
 		Vector2 test_vel = {-4, 0};
 		move_by_velocity(world, x, y, test_vel);
-		//move_left(world, x, y);
 		return;
 	}
 	
