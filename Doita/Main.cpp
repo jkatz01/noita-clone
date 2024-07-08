@@ -5,14 +5,14 @@
 #include "raylib.h"
 
 #define LIGHTBLUE ColorFromHSV(200, 0.78f, 0.92f)
-#define JUICERED CLITERAL(Color){200, 100, 2, 255}
+#define JUICERED CLITERAL(Color){200, 100, 2, 200}
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 
 #define WATER_BLUE       CLITERAL(Color){ 0, 121, 241, 150 } 
 
-const int world_size = 200;
-const int screen_size = 800;
+const int world_size = 400;
+const int screen_size = 1200;
 const int scaled_size = screen_size / world_size;
 
 const int gravity = 2;
@@ -116,7 +116,6 @@ void add_material(Particle** world, int x, int y, int world_size, int brush_size
 
 	for (int i = 0; i < world_size; i++) {
 		for (int j = 0; j < world_size; j++) {
-			DrawRectangleLines(MIN(previous_x, x) * scaled_size, MIN(previous_y, y) * scaled_size, (MAX(previous_x, x) - MIN(previous_x, x)) * scaled_size, (MAX(previous_y, y) - MIN(previous_y, y)) * scaled_size, GREEN);
 			if (CheckCollisionPointLine( Vector2 { (float)j * scaled_size, (float)i* scaled_size }, startPos, endPos, brush_size)) {
 				if (world[i][j].type == EMPTY) {
 					world[i][j].type = mt_type;
@@ -155,7 +154,6 @@ void delete_material(Particle** world, int x, int y, int world_size, int brush_s
 
 	for (int i = 0; i < world_size; i++) {
 		for (int j = 0; j < world_size; j++) {
-			DrawRectangleLines(MIN(previous_x, x) * scaled_size, MIN(previous_y, y) * scaled_size, (MAX(previous_x, x) - MIN(previous_x, x)) * scaled_size, (MAX(previous_y, y) - MIN(previous_y, y)) * scaled_size, GREEN);
 			if (CheckCollisionPointLine( Vector2 { (float)j* scaled_size, (float)i* scaled_size }, startPos, endPos, brush_size)) {
 				world[i][j].type = EMPTY;
 				world[i][j].color = color_lookup(EMPTY);
@@ -417,7 +415,7 @@ int main() {
 		BeginDrawing();
 		ClearBackground(DARKGRAY);
 
-		DrawTexture(bg_texture, screen_size / 2 - bg_texture.width / 2, screen_size / 2 - bg_texture.height / 2 - 40, WHITE);
+		DrawTexture(bg_texture, screen_size / 2 - bg_texture.width / 2, screen_size / 2 - bg_texture.height / 2 - 40, WHITE);		
 
 		if (simulate)
 		{
@@ -440,7 +438,7 @@ int main() {
 				DrawRectangle(j * scaled_size, i * scaled_size, scaled_size, scaled_size, world[i][j].color);
 			}
 		}
-
+		DrawCircleLines((int)GetMouseX(), (int)GetMouseY(), brush_size, BLACK);
 		DrawText("1 - Sand | 2 - Water | 3 - Stone | 4 - ORANGE_JUICE | RMB - Delete \n\nB/V - Brush | ENTER - Toggle | J - Reset", 100, 40, 24, WHITE);
 		char fps_msg[8];
 		_itoa_s(GetFPS(), fps_msg, 8, 10);
