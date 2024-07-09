@@ -23,12 +23,14 @@ enum ParticleType {
 	AIR,
 	WATER,
 	ORANGE_JUICE,
+	STEAM,
 	EMPTY
 };
 
 typedef struct {
 	int up_left, left, down_left, down, down_right, right, up_right, up;
 } PixelSurroundings;
+// guh, just boundry check the pixel you want to go to
 
 typedef struct {
 	enum ParticleType type;
@@ -48,10 +50,11 @@ float rand_range(float min, float max)
 Color color_lookup(enum ParticleType type) {
 	switch (type) {
 	case AIR: return LIGHTBLUE;
-	case STONE: return DARKBROWN;
+	case STONE: return ColorBrightness(DARKBROWN, rand_range(-0.3f, 0.1f));;
 	case SAND: return ColorBrightness(BROWN, rand_range(-0.3f, 0.3f));
 	case WATER: return ColorBrightness(WATER_BLUE, rand_range(-0.1f, 0.1f));
 	case ORANGE_JUICE: return ColorBrightness(JUICERED, rand_range(0, 0.3f));
+	case STEAM: return ColorTint(WHITE, ColorBrightness(BLUE, rand_range(0.5, 0.7f)));
 	case EMPTY: return CLITERAL(Color) { 0, 0, 0, 100 };
 	default: return RED;
 	}
@@ -64,7 +67,8 @@ int density_lookup(enum ParticleType type) {
 	case SAND: return 3;
 	case WATER: return 1;
 	case ORANGE_JUICE: return 2;
-	case EMPTY: return 0;
+	case STEAM: return 0;
+	case EMPTY: return -1;
 	default: return 0;
 	}
 }
@@ -73,14 +77,8 @@ void generate_world(Particle** world, int world_size) {
 	for (int i = 0; i < world_size; i++) {
 		for (int j = 0; j < world_size; j++) {
 			world[i][j].updated = 0;
-			if (i > 40 && i < 60 && j > 40 && j < 60) {
-				world[i][j].type = SAND;
-				world[i][j].color = color_lookup(SAND);
-			}
-			else {
-				world[i][j].type = EMPTY;
-				world[i][j].color = color_lookup(EMPTY);
-			}
+			world[i][j].type = EMPTY;
+			world[i][j].color = color_lookup(EMPTY);
 		}
 	}
 }
@@ -169,31 +167,39 @@ void delete_material(Particle** world, int x, int y, int world_size, int brush_s
 PixelSurroundings check_bounds(int x, int y, int world_size) {
 	PixelSurroundings me = { 0, 0, 0, 0, 0, 0, 0, 0 };
 	if (y < world_size - 1) me.down = 1;
+	if (y > 0) me.up = 1;
 	if (x > 0) me.left = 1;
 	if (y < world_size - 1 && x > 0) me.down_left = 1;
 	if (x < world_size - 1) me.right = 1;
 	if (y < world_size - 1 && x < world_size - 1) me.down_right = 1;
+	if (y > 0 && x > 0) me.up_left = 1;
+	if (y >  0 && x < world_size - 1) me.up_right = 1;
 	return me;
 }
-
+void move_up(Particle** world, int x, int y) {
+	Particle r_part = world[y - 1][x];
+	world[y - 1][x] = world[y][x];
+	//world[y+1][x].updated = 1;
+	world[y][x] = r_part;
+}
 void move_down(Particle** world, int x, int y) {
 	Particle r_part = world[y + 1][x];
 	world[y + 1][x] = world[y][x];
 	//world[y+1][x].updated = 1;
 	world[y][x] = r_part;
 }
-void move_down_right(Particle** world, int x, int y) {
-	Particle r_part = world[y + 1][x + 1];
-	world[y + 1][x + 1] = world[y][x];
-	//world[y+1][x+1].updated = 1;
-	world[y][x] = r_part;
-}
-void move_down_left(Particle** world, int x, int y) {
-	Particle r_part = world[y + 1][x - 1];
-	world[y + 1][x - 1] = world[y][x];
-	//world[y+1][x-1].updated = 1;
-	world[y][x] = r_part;
-}
+//void move_down_right(Particle** world, int x, int y) {
+//	Particle r_part = world[y + 1][x + 1];
+//	world[y + 1][x + 1] = world[y][x];
+//	//world[y+1][x+1].updated = 1;
+//	world[y][x] = r_part;
+//}
+//void move_down_left(Particle** world, int x, int y) {
+//	Particle r_part = world[y + 1][x - 1];
+//	world[y + 1][x - 1] = world[y][x];
+//	//world[y+1][x-1].updated = 1;
+//	world[y][x] = r_part;
+//}
 void move_right(Particle** world, int x, int y) {
 	Particle r_part = world[y][x + 1];
 	world[y][x + 1] = world[y][x];
@@ -218,6 +224,11 @@ void move_by_velocity(Particle** world, int x, int y, Vector2 vel) {
 		vel.y -= 1;
 	}
 
+	if (world[x][y].type == STEAM) {
+		if (x % 2 == 0) vel.x += 1;
+		else vel.x -= 1;
+	}
+
 	int desired_x = x + (int)vel.x;
 	int desired_y = y + (int)vel.y;
 
@@ -231,7 +242,7 @@ void move_by_velocity(Particle** world, int x, int y, Vector2 vel) {
 
 	// X direction
 	if (vel.x < 0) {
-		while (cur_x != desired_x) {
+		while (cur_x > desired_x) {
 			if (density_lookup(world[cur_y][cur_x - 1].type) < density_lookup(world[cur_y][cur_x].type)) {
 				move_left(world, cur_x, cur_y);
 				cur_x--;
@@ -240,7 +251,7 @@ void move_by_velocity(Particle** world, int x, int y, Vector2 vel) {
 		}
 	}
 	else if (vel.x > 0) {
-		while (cur_x != desired_x) {
+		while (cur_x < desired_x) {
 			if (density_lookup(world[cur_y][cur_x + 1].type) < density_lookup(world[cur_y][cur_x].type)) {
 				move_right(world, cur_x, cur_y);
 				cur_x++;
@@ -252,10 +263,16 @@ void move_by_velocity(Particle** world, int x, int y, Vector2 vel) {
 
 	// Y direction
 	if (vel.y < 0) {
-		;
+		while (cur_y > desired_y) {
+			if (density_lookup(world[cur_y - 1][cur_x].type) < density_lookup(world[cur_y][cur_x].type)) {
+				move_up(world, cur_x, cur_y);
+				cur_y--;
+			}
+			else break;
+		}
 	}
 	else if (vel.y > 0) {
-		while (cur_y != desired_y) {
+		while (cur_y < desired_y) {
 			if (density_lookup(world[cur_y + 1][cur_x].type) < density_lookup(world[cur_y][cur_x].type)) {
 				move_down(world, cur_x, cur_y);
 				cur_y++;
@@ -323,9 +340,37 @@ void update_liquid(Particle** world, int x, int y, int world_size) {
 		move_by_velocity(world, x, y, test_vel);
 		return;
 	}
+}
+void update_gas(Particle** world, int x, int y, int world_size) {
+	PixelSurroundings my_pos = check_bounds(x, y, world_size);
+	//int odd = x % 2;
+	//if odd()
+	if (my_pos.up && density_lookup(world[y - 1][x].type) < density_lookup(world[y][x].type)) {
+		Vector2 test_vel = { 0, -1 };
+		move_by_velocity(world, x, y, test_vel);
+		return;
+	}
 
-
-
+	if (my_pos.up_right && density_lookup(world[y - 1][x + 1].type) < density_lookup(world[y][x].type)) {
+		Vector2 test_vel = { 2, -1 };
+		move_by_velocity(world, x, y, test_vel);
+		return;
+	}
+	if (my_pos.up_left && density_lookup(world[y - 1][x - 1].type) < density_lookup(world[y][x].type)) {
+		Vector2 test_vel = { -2, -1 };
+		move_by_velocity(world, x, y, test_vel);
+		return;
+	}
+	if (my_pos.right && density_lookup(world[y][x + 1].type) < density_lookup(world[y][x].type)) {
+		Vector2 test_vel = { 4, 0 };
+		move_by_velocity(world, x, y, test_vel);
+		return;
+	}
+	if (my_pos.left && density_lookup(world[y][x - 1].type) < density_lookup(world[y][x].type)) {
+		Vector2 test_vel = { -4, 0 };
+		move_by_velocity(world, x, y, test_vel);
+		return;
+	}
 }
 
 void update_me(Particle** world, int x, int y, int world_size) {
@@ -341,13 +386,14 @@ void update_me(Particle** world, int x, int y, int world_size) {
 	case SAND: update_powder(world, x, y, world_size); break;
 	case WATER: update_liquid(world, x, y, world_size); break;
 	case ORANGE_JUICE: update_liquid(world, x, y, world_size); break;
+	case STEAM: update_gas(world, x, y, world_size); break;
 	}
 }
 
 
 int main() {
 	InitWindow(screen_size, screen_size, "World");
-	SetTargetFPS(0);
+	//SetTargetFPS(0);
 
 	srand((int)time(NULL));
 
@@ -365,7 +411,7 @@ int main() {
 	generate_world(world, world_size);
 
 	int mouse_x, mouse_y;
-	enum ParticleType materials[4] = { SAND, WATER, STONE, ORANGE_JUICE };
+	enum ParticleType materials[5] = { SAND, WATER, STONE, ORANGE_JUICE, STEAM };
 	enum ParticleType m_choice = SAND;
 
 	int l_mouse_held_last_frame = 0;
@@ -390,6 +436,7 @@ int main() {
 		else if (IsKeyPressed(KEY_TWO)) { m_choice = materials[1]; }
 		else if (IsKeyPressed(KEY_THREE)) m_choice = materials[2];
 		else if (IsKeyPressed(KEY_FOUR)) m_choice = materials[3];
+		else if (IsKeyPressed(KEY_FIVE)) m_choice = materials[4];
 		else if (IsKeyPressed(KEY_J)) generate_world(world, world_size);
 		else if (IsKeyPressed(KEY_B)) brush_size += 5;
 		else if (IsKeyPressed(KEY_V)) brush_size -= 5;
@@ -419,7 +466,7 @@ int main() {
 
 		if (simulate)
 		{
-			for (int i = world_size - 1; i > 0; --i) {
+			for (int i = 0; i <  world_size; i++) {
 				if (i % 2 == 0) {
 					for (int j = 0; j < world_size; j++) {
 						update_me(world, j, i, world_size);
@@ -439,7 +486,7 @@ int main() {
 			}
 		}
 		DrawCircleLines((int)GetMouseX(), (int)GetMouseY(), brush_size, BLACK);
-		DrawText("1 - Sand | 2 - Water | 3 - Stone | 4 - ORANGE_JUICE | RMB - Delete \n\nB/V - Brush | ENTER - Toggle | J - Reset", 100, 40, 24, WHITE);
+		DrawText("1 - Sand | 2 - Water | 3 - Stone | 4 - Juice | 5 - Steam | RMB - Delete \n\nB/V - Brush | ENTER - Toggle | J - Reset", 100, 40, 24, WHITE);
 		char fps_msg[8];
 		_itoa_s(GetFPS(), fps_msg, 8, 10);
 		DrawText(fps_msg, 600, 160, 40, BLACK);
