@@ -1,8 +1,6 @@
 #include <iostream>
 #include "raylib.h"
-
 #include <time.h>
-#include "raylib.h"
 
 #define LIGHTBLUE ColorFromHSV(200, 0.78f, 0.92f)
 #define JUICERED CLITERAL(Color){200, 100, 2, 200}
@@ -11,8 +9,8 @@
 
 #define WATER_BLUE       CLITERAL(Color){ 0, 121, 241, 150 } 
 
-const int world_size = 400;
-const int screen_size = 1200;
+const int world_size = 200;
+const int screen_size = 800;
 const int scaled_size = screen_size / world_size;
 
 const int gravity = 2;
@@ -473,7 +471,7 @@ int main() {
 					}
 				}
 				else {
-					for (int j = world_size - 1; j > 0; j--) {
+					for (int j = world_size - 1; j >= 0; j--) {
 						update_me(world, j, i, world_size);
 					}
 				}

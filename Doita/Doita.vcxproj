@@ -127,7 +127,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Main.cpp" />
+    <Text Include="old\old_program.txt" />
+    <ClCompile Include="src\Main.cpp" />
+    <ClCompile Include="src\SandChunk.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="assets\beautifu.png" />
