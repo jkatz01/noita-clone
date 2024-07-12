@@ -1,41 +1,24 @@
 #include <iostream>
 #include "raylib.h"
-#include "SandChunk.cpp"
+#include "SandWorld.cpp"
 
-Color color_lookup(ParticleType type) {
-	switch (type) {
-	case EMPTY: return CLITERAL(Color) { 0, 0, 0, 100 };
-	case STONE: return DARKBROWN;
-	case SAND: return YELLOW;
-	default: return RED;
-	}
-}
 
 int main() {
-	const int chunk_size = 100; // must match the SandChunk size
-	const int screen_size = 800;
-	const int scaled_size = screen_size / chunk_size;
+	SandWorld *world = new SandWorld();
 
-	InitWindow(screen_size, screen_size, "World");
+	InitWindow(world->screen_size, world->screen_size, "World");
 	//SetTargetFPS(0);
-	int seed = 7000;
+	
 
-	srand(seed);
-
-	SandChunk *first_chunk = new SandChunk();
-	first_chunk->add_material_square(10, 10, 10, SAND);
+	world->make_one_chunk_world();
 
 	while (!WindowShouldClose()) {
 		BeginDrawing();
 		ClearBackground(DARKGRAY);
 
-		first_chunk->iterate_chunk();
+		world->update_one_chunk_world();
 
-		for (int i = 0; i < chunk_size; i++) {
-			for (int j = 0; j < chunk_size; j++) {
-				DrawRectangle(i * scaled_size, j * scaled_size, scaled_size, scaled_size, color_lookup(first_chunk->grid[first_chunk->index(i, j)].type ));
-			}
-		}
+		world->draw_one_chunk_world();
 
 		DrawCircleLines((int)GetMouseX(), (int)GetMouseY(), 40, BLACK);
 

@@ -79,7 +79,6 @@ public:
         bool y_down = (vel.y > 0);
 
         while (cur_x != desired_x || cur_y != desired_y) {
-            std::cout << "in loop " << x << ", " << y << ", " << desired_y << std::endl;
             if (y_down && grid[index(cur_x, cur_y + 1)].type == EMPTY) {
                 cur_y++;
             }
