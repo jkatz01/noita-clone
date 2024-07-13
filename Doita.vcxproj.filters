@@ -24,9 +24,6 @@
     <ClCompile Include="src\SandWorld.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Line.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\IntVector.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
