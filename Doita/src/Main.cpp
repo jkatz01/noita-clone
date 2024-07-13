@@ -16,6 +16,13 @@ int main() {
 		BeginDrawing();
 		ClearBackground(DARKGRAY);
 
+		if (IsKeyPressed(KEY_ENTER)) {
+			world->first_chunk->add_material_square(10, 10, 10, SAND);
+		}
+		else if (IsKeyPressed(KEY_C)) {
+			world->first_chunk->add_material_square(10, 10, 10, EMPTY);
+		}
+
 		world->update_one_chunk_world();
 
 		world->draw_one_chunk_world();
