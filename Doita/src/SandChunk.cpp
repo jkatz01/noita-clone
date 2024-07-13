@@ -1,6 +1,9 @@
 #include <iostream>
 #include <vector>
 #include "raylib.h"
+#include "raymath.h"
+
+#include "IntVector.cpp"
 
 enum ParticleType {
 	EMPTY,
@@ -70,6 +73,170 @@ public:
         }
     }
 
+
+    Particle* get_particle_at(int x, int y) {
+        if (!in_bounds(x, y)) {
+            return nullptr;
+        }
+
+        return &grid[index(x, y)];
+
+    }
+
+    int signum(float x) {
+        return (x > 0) - (x < 0);
+    }
+
+    void move_towards2(int x, int y, Vector2 vel) {
+
+        int initial_x = x, initial_y = y;
+
+
+        int dx = abs(vel.x);
+        int dy = abs(vel.y);
+
+        int sx = signum(vel.x);
+        int sy = signum(vel.y);
+
+        int err = dx - dy;
+
+
+
+        while (true) {
+
+
+            if ((x == initial_x +vel.x && y == initial_y +vel.y)) {
+                break;
+            }
+
+
+
+            int e2 = 2 * err;
+            if (e2 > -dy) {
+                err -= dy;
+                x += sx;
+                if (!check_empty_and_in_bounds(x, y)) {
+                    x -= sx;
+                    break;
+                }
+            }
+            else if (e2 < dx) {
+                err += dx;
+                y += sy;
+                if (!check_empty_and_in_bounds(x, y)) {
+                    y -= sy;
+                    break;
+                }
+            }
+
+        }
+
+
+        if (!(initial_x == x && initial_y == y)) {
+            queue_update_swap_particles(IntVector(initial_x, initial_y), IntVector(x, y));
+        }
+    }
+
+    bool check_empty_and_in_bounds(int x, int y) {
+        return in_bounds(x, y) && get_particle_at(x, y)->type == EMPTY;
+    }
+
+    void move_towards(int x, int y, Vector2 vel) {
+
+
+        Particle particle = *get_particle_at(x, y);
+        if (particle.type == EMPTY) {
+            //THERE IS NO PARTICLE - bald kid with a spoon
+            return;
+        }
+
+        float offset_x = 0.5, offset_y = 0.5;
+
+        Vector2 norm_vel = Vector2Normalize(vel);
+
+        IntVector* cornerDirection = new IntVector(signum(vel.x), signum(vel.y));
+
+
+        int cur_x, cur_y, dest_x, dest_y;
+
+        cur_x = x;
+        cur_y = y;
+        dest_x = x + vel.x;
+        dest_y = y + vel.y;
+
+        Vector2 candidate_step_pos = { cur_x, cur_y };
+
+        float step_scale = 1.41421356237f;
+        bool blocked = false;
+        //bool stepped;
+
+        while ((cur_x != dest_x || cur_y != dest_y) && !blocked) {
+
+            //perfect accuracy get true step_scale for 1 cell
+            float dx = cornerDirection->x + cur_x - (candidate_step_pos.x);
+            float dy = cornerDirection->y + cur_x - (candidate_step_pos.y);
+            step_scale = sqrt(dx * dx + dy * dy) + 0.001;
+
+
+            while (true) {
+
+
+                Vector2 scaledVector = Vector2Scale(norm_vel, step_scale);
+
+                //move closer
+                candidate_step_pos = Vector2Add(candidate_step_pos, scaledVector);
+
+                //get cell
+                int cell_x, cell_y;
+                cell_x = round(candidate_step_pos.x);
+                cell_y = round(candidate_step_pos.y);
+
+                //check manhattan distance
+                int man_dist = abs(cell_x - cur_x) + abs(cell_y - cur_y);
+
+                if (man_dist == 1) {
+
+                    if (get_particle_at(cell_x, cell_y)->type == EMPTY) {
+                        //success
+                        cur_x = cell_x;
+                        cur_y = cell_y;
+                    }
+                    else {
+                        blocked = true;
+                    }
+                    break;
+                }
+
+                if (man_dist == 0) {
+                    /*
+                    //move more
+                    if (step_scale == 1) {
+                        step_scale = 0.25f; //to speed it up
+                    }
+                    else {
+                        step_scale /= 2;
+                    }
+                    */
+                    continue;
+                }
+
+                if (man_dist >=2) {
+                    step_scale = -abs(step_scale/2);
+                    continue;
+                }
+            }
+
+
+
+        }
+        if (!(cur_x == x && cur_y == y)) {
+            queue_update_swap_particles(IntVector(cur_x, cur_y), IntVector(x, y));
+        }
+
+
+    }
+
+
     void move_by_velocity(int x, int y, Vector2 vel) {
         int cur_x = x;
         int cur_y = y;
@@ -91,10 +258,21 @@ public:
         updates.push_back({ cur_x, cur_y, grid[index(x, y)] }); // Change end position to current particle
     }
 
+
+    void queue_update_swap_particles(IntVector v1, IntVector v2) {
+        Particle p1, p2;
+
+        p1 = *get_particle_at(v1.x, v1.y);
+        p2 = *get_particle_at(v2.x, v2.y);
+
+        updates.push_back({ v1.x, v1.y, p2 });
+        updates.push_back({ v2.x, v2.y, p1 }); 
+    }
+
     void update_down(int x, int y) {
         Vector2 vel = {0, 1}; // temporary, should be in particle's info
         if (in_bounds(x, y + (int)vel.y)) {
-            move_by_velocity(x, y, vel);
+            move_towards2(x, y, vel);
         }
         else {
             // Send update to chunk below
