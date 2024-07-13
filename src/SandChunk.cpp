@@ -87,7 +87,7 @@ public:
         return (x > 0) - (x < 0);
     }
 
-    void move_towards2(int x, int y, Vector2 vel) {
+    void move_towards(int x, int y, Vector2 vel) {
 
         int initial_x = x, initial_y = y;
 
@@ -141,123 +141,6 @@ public:
         return in_bounds(x, y) && get_particle_at(x, y)->type == EMPTY;
     }
 
-    void move_towards(int x, int y, Vector2 vel) {
-
-
-        Particle particle = *get_particle_at(x, y);
-        if (particle.type == EMPTY) {
-            //THERE IS NO PARTICLE - bald kid with a spoon
-            return;
-        }
-
-        float offset_x = 0.5, offset_y = 0.5;
-
-        Vector2 norm_vel = Vector2Normalize(vel);
-
-        IntVector* cornerDirection = new IntVector(signum(vel.x), signum(vel.y));
-
-
-        int cur_x, cur_y, dest_x, dest_y;
-
-        cur_x = x;
-        cur_y = y;
-        dest_x = x + vel.x;
-        dest_y = y + vel.y;
-
-        Vector2 candidate_step_pos = { cur_x, cur_y };
-
-        float step_scale = 1.41421356237f;
-        bool blocked = false;
-        //bool stepped;
-
-        while ((cur_x != dest_x || cur_y != dest_y) && !blocked) {
-
-            //perfect accuracy get true step_scale for 1 cell
-            float dx = cornerDirection->x + cur_x - (candidate_step_pos.x);
-            float dy = cornerDirection->y + cur_x - (candidate_step_pos.y);
-            step_scale = sqrt(dx * dx + dy * dy) + 0.001;
-
-
-            while (true) {
-
-
-                Vector2 scaledVector = Vector2Scale(norm_vel, step_scale);
-
-                //move closer
-                candidate_step_pos = Vector2Add(candidate_step_pos, scaledVector);
-
-                //get cell
-                int cell_x, cell_y;
-                cell_x = round(candidate_step_pos.x);
-                cell_y = round(candidate_step_pos.y);
-
-                //check manhattan distance
-                int man_dist = abs(cell_x - cur_x) + abs(cell_y - cur_y);
-
-                if (man_dist == 1) {
-
-                    if (get_particle_at(cell_x, cell_y)->type == EMPTY) {
-                        //success
-                        cur_x = cell_x;
-                        cur_y = cell_y;
-                    }
-                    else {
-                        blocked = true;
-                    }
-                    break;
-                }
-
-                if (man_dist == 0) {
-                    /*
-                    //move more
-                    if (step_scale == 1) {
-                        step_scale = 0.25f; //to speed it up
-                    }
-                    else {
-                        step_scale /= 2;
-                    }
-                    */
-                    continue;
-                }
-
-                if (man_dist >=2) {
-                    step_scale = -abs(step_scale/2);
-                    continue;
-                }
-            }
-
-
-
-        }
-        if (!(cur_x == x && cur_y == y)) {
-            queue_update_swap_particles(IntVector(cur_x, cur_y), IntVector(x, y));
-        }
-
-
-    }
-
-
-    void move_by_velocity(int x, int y, Vector2 vel) {
-        int cur_x = x;
-        int cur_y = y;
-        int desired_x = x;
-        int desired_y = y + (int)vel.y;
-
-        bool y_down = (vel.y > 0);
-
-        while (cur_x != desired_x || cur_y != desired_y) {
-            if (y_down && grid[index(cur_x, cur_y + 1)].type == EMPTY) {
-                cur_y++;
-            }
-            else {
-                break;
-            }
-        }
-
-        updates.push_back({ x, y, grid[index(cur_x, cur_y)] }); // Change starting position to empty
-        updates.push_back({ cur_x, cur_y, grid[index(x, y)] }); // Change end position to current particle
-    }
-
 
     void queue_update_swap_particles(IntVector v1, IntVector v2) {
         Particle p1, p2;
@@ -272,7 +155,7 @@ public:
     void update_down(int x, int y) {
         Vector2 vel = {0, 1}; // temporary, should be in particle's info
         if (in_bounds(x, y + (int)vel.y)) {
-            move_towards2(x, y, vel);
+            move_towards(x, y, vel);
         }
         else {
             // Send update to chunk below

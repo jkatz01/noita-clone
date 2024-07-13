@@ -54,4 +54,22 @@ public:
 			}
 		}
 	}
+
+
+	void executeFrame() {
+		inputHandler();
+		update_one_chunk_world();
+		draw_one_chunk_world();
+	}
+
+
+	void inputHandler() {
+
+		if (IsKeyPressed(KEY_ENTER)) {
+			first_chunk->add_material_square(10, 10, 10, SAND);
+		}
+		else if (IsKeyPressed(KEY_C)) {
+			first_chunk->add_material_square(10, 10, 10, EMPTY);
+		}
+	}
 };
