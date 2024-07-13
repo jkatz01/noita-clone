@@ -2,9 +2,13 @@
 #include "raylib.h"
 #include "SandWorld.cpp"
 
+SandWorld* world;
+
+
+
 
 int main() {
-	SandWorld *world = new SandWorld();
+	world = new SandWorld();
 
 	InitWindow(world->screen_size, world->screen_size, "World");
 	//SetTargetFPS(0);
@@ -16,16 +20,7 @@ int main() {
 		BeginDrawing();
 		ClearBackground(DARKGRAY);
 
-		if (IsKeyPressed(KEY_ENTER)) {
-			world->first_chunk->add_material_square(10, 10, 10, SAND);
-		}
-		else if (IsKeyPressed(KEY_C)) {
-			world->first_chunk->add_material_square(10, 10, 10, EMPTY);
-		}
-
-		world->update_one_chunk_world();
-
-		world->draw_one_chunk_world();
+		world->executeFrame();
 
 		DrawCircleLines((int)GetMouseX(), (int)GetMouseY(), 40, BLACK);
 

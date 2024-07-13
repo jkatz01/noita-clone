@@ -127,6 +127,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Line.cpp" />
+    <ClCompile Include="src\IntVector.cpp" />
     <ClCompile Include="src\SandWorld.cpp" />
     <Text Include="old\old_program.txt" />
     <ClCompile Include="src\Main.cpp" />
