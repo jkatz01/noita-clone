@@ -24,11 +24,13 @@ enum MovementType {
 
 struct Particle {
     ParticleType type;
+    Vector2    velocity = {0, 0};
+    Color        colour = YELLOW;
 };
 
 struct ParticleUpdate {
     IntVector pos;
-    Particle particle;
+    Particle  particle;
 };
 
 
@@ -129,7 +131,7 @@ public:
         }
 
         if (!(initial_x == pos.x && initial_y == pos.y)) {
-            QueueUpdateSwapParticles(IntVector(initial_x, initial_y), IntVector(pos.x, pos.y));
+            QueueUpdateSwapParticles(IntVector(initial_x, initial_y), pos);
         }
     }
 
@@ -148,23 +150,18 @@ public:
         updates.push_back({ IntVector {v2.x, v2.y}, p1 });
     }
 
-    void UpdateDown(IntVector pos) {
-        Vector2 vel = {0, 1}; // temporary, should be in particle's info
-        if (InBounds(IntVector {pos.x, pos.y + (int)vel.y} )) {
-            MoveTowards(pos, vel);
-        }
-        else {
-            // Send update to chunk below
-        }
-    }
-
     void UpdateParticle(IntVector pos) {
-        switch (GetMovementType(GetParticleAt(pos)->type)) {
-            case MT_STATIC: return;
-            case MT_DOWN: {
-                UpdateDown(pos);
-                return;
-            }
+        Particle *p = GetParticleAt(pos);
+        switch (GetMovementType(p->type)) {
+            case MT_STATIC: 
+                p->velocity = { 0, 0 };
+                break;
+            case MT_DOWN:
+                p->velocity = { 0, 1 };
+                break;
+        }
+        if (InBounds(IntVector{ pos.x, pos.y + (int)p->velocity.y })) {
+            MoveTowards(pos, p->velocity);
         }
     }
 
@@ -177,7 +174,7 @@ public:
         }
 
         // Update grid
-        for (ParticleUpdate pu : updates) {
+        for (ParticleUpdate &pu : updates) {
             grid[index(pu.pos)] = pu.particle;
         }
         updates.clear();
