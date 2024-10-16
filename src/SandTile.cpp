@@ -24,7 +24,7 @@ enum MovementType {
 
 struct Particle {
     ParticleType type;
-    Vector2    velocity = {0, 0};
+    Vector2      velocity = {0, 0};
     Color        colour = YELLOW;
 };
 
@@ -75,7 +75,7 @@ public:
         switch (t) {
             case EMPTY: return MT_STATIC;
             case STONE: return MT_STATIC;
-            case SAND: return MT_DOWN;
+            case SAND: return MT_POWDER;
             default: return MT_STATIC;
         }
     }
@@ -131,6 +131,7 @@ public:
         }
 
         if (!(initial_x == pos.x && initial_y == pos.y)) {
+            GetParticleAt({initial_x, initial_y})->velocity = {0, 0};
             QueueUpdateSwapParticles(IntVector(initial_x, initial_y), pos);
         }
     }
@@ -150,6 +151,39 @@ public:
         updates.push_back({ IntVector {v2.x, v2.y}, p1 });
     }
 
+    bool CanReplaceParticle(IntVector v1, IntVector v2) {
+        Particle *p1 = GetParticleAt(v1);
+        Particle *p2 = GetParticleAt(v2);
+        if (!InBounds(v2)) {
+            return false;
+        }
+        if (p2->type == EMPTY) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    void UpdateDownMovement(IntVector pos, Particle *p) {
+        p->velocity = {0, 1};
+    }
+
+    void UpdatePowderMovement(IntVector pos, Particle* p) {
+        IntVector pos_down = { pos.x, pos.y + 1 };
+        IntVector pos_down_left = { pos.x - 1, pos.y + 1 };
+        IntVector pos_down_right = { pos.x + 1, pos.y + 1 };
+        if (InBounds(pos_down) && CanReplaceParticle(pos, pos_down) ) {
+            p->velocity = {0, 1};
+        }
+        else if (InBounds(pos_down_left) && CanReplaceParticle(pos, pos_down_left)) {
+            p->velocity = { -1, 1 };
+        }
+        else if (InBounds(pos_down_right) && CanReplaceParticle(pos, pos_down_right)) {
+            p->velocity = { 1, 1 };
+        }
+    }
+
     void UpdateParticle(IntVector pos) {
         Particle *p = GetParticleAt(pos);
         switch (GetMovementType(p->type)) {
@@ -157,7 +191,10 @@ public:
                 p->velocity = { 0, 0 };
                 break;
             case MT_DOWN:
-                p->velocity = { 0, 1 };
+                UpdateDownMovement(pos, p);
+                break;
+            case MT_POWDER:
+                UpdatePowderMovement(pos, p);
                 break;
         }
         if (InBounds(IntVector{ pos.x, pos.y + (int)p->velocity.y })) {
@@ -175,6 +212,28 @@ public:
 
         // Update grid
         for (ParticleUpdate &pu : updates) {
+            grid[index(pu.pos)] = pu.particle;
+        }
+        updates.clear();
+    }
+
+    void IterateTileAlternate() {
+        // Update every particle based on old grid
+        for (int i = 0; i < size; i++) {
+            if (i % 2 == 0) {
+                for (int j = 0; j < size; j++) {
+                    UpdateParticle(IntVector{ i, j });
+                }
+            }
+            else {
+                for (int j = size - 1; j >= 0; j--) {
+                    UpdateParticle(IntVector{ i, j });
+                }
+            }
+        }
+
+        // Update grid
+        for (ParticleUpdate& pu : updates) {
             grid[index(pu.pos)] = pu.particle;
         }
         updates.clear();

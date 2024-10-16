@@ -21,9 +21,6 @@ int main() {
 
 		DrawCircleLines((int)GetMouseX(), (int)GetMouseY(), 40, BLACK);
 
-		char fps_msg[8];
-		_itoa_s(GetFPS(), fps_msg, 8, 10);
-		DrawText(fps_msg, 600, 160, 40, BLACK);
 		EndDrawing();
 	}
 	CloseWindow();

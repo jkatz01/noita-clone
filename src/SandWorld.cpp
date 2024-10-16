@@ -15,8 +15,10 @@ public:
 	SandTile* first_chunk = nullptr;
 
 	//TODO: 
-	void CursorToWorld() {
+	IntVector CursorToWorld(IntVector pos) {
 		// Mouse position to position in world grid
+		IntVector new_pos = {pos.x / scaled_size, pos.y / scaled_size};
+		return new_pos;
 	}
 	void WorldToChunk() {
 		// World position to chunk and position in chunk
@@ -40,11 +42,11 @@ public:
 	void MakeOneTileWorld() {
 		srand(seed);
 		first_chunk = new SandTile();
-		first_chunk->AddMaterialSquare(IntVector {10, 10}, 10, SAND);
+		first_chunk->AddMaterialSquare(IntVector {50, 10}, 10, SAND);
 	}
 
 	void UpdateOneTileWorld() {
-		first_chunk->IterateTile();
+		first_chunk->IterateTileAlternate();
 	}
 
 	void DrawOneTileWorld() {
@@ -58,19 +60,34 @@ public:
 
 
 	void executeFrame() {
-		inputHandler();
+		AddParticles();
 		UpdateOneTileWorld();
 		DrawOneTileWorld();
+		DrawFps();
+	}
+	
+	void DrawFps() {
+		char fps_msg[8];
+		_itoa_s(GetFPS(), fps_msg, 8, 10);
+		DrawText(fps_msg, 600, 50, 40, BLACK);
 	}
 
+	void AddParticles() {
+		IntVector scaled_pos = CursorToWorld({ GetMouseX(), GetMouseY() });
 
-	void inputHandler() {
+		char mouse_pos[100];
+		snprintf(mouse_pos, 100, "X: %d, Y: %d", GetMouseX(), GetMouseY());
+		DrawText(mouse_pos, 50, 50, 40, BLACK);
 
-		if (IsKeyPressed(KEY_ENTER)) {
-			first_chunk->AddMaterialSquare(IntVector{ 10, 10 }, 10, SAND);
+		char mouse_pos_s[100];
+		snprintf(mouse_pos_s, 100, "X: %d, Y: %d", scaled_pos.x, scaled_pos.y);
+		DrawText(mouse_pos_s, 50, 100, 40, BLACK);
+
+		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+			first_chunk->AddMaterialSquare(scaled_pos, 10, SAND);
 		}
-		else if (IsKeyPressed(KEY_C)) {
-			first_chunk->AddMaterialSquare(IntVector{ 10, 10 }, 10, EMPTY);
+		else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
+			first_chunk->AddMaterialSquare(scaled_pos, 10, EMPTY);
 		}
 	}
 };
