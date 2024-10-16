@@ -45,7 +45,7 @@ float rand_range(float min, float max)
 	return (random * range) + min;
 }
 
-Color color_lookup(enum ParticleType type) {
+Color ColorLookup(enum ParticleType type) {
 	switch (type) {
 	case AIR: return LIGHTBLUE;
 	case STONE: return ColorBrightness(DARKBROWN, rand_range(-0.3f, 0.1f));;
@@ -76,7 +76,7 @@ void generate_world(Particle** world, int world_size) {
 		for (int j = 0; j < world_size; j++) {
 			world[i][j].updated = 0;
 			world[i][j].type = EMPTY;
-			world[i][j].color = color_lookup(EMPTY);
+			world[i][j].color = ColorLookup(EMPTY);
 		}
 	}
 }
@@ -115,7 +115,7 @@ void add_material(Particle** world, int x, int y, int world_size, int brush_size
 			if (CheckCollisionPointLine( Vector2 { (float)j * scaled_size, (float)i* scaled_size }, startPos, endPos, brush_size)) {
 				if (world[i][j].type == EMPTY) {
 					world[i][j].type = mt_type;
-					world[i][j].color = color_lookup(mt_type);
+					world[i][j].color = ColorLookup(mt_type);
 				}
 			}
 
@@ -152,7 +152,7 @@ void delete_material(Particle** world, int x, int y, int world_size, int brush_s
 		for (int j = 0; j < world_size; j++) {
 			if (CheckCollisionPointLine( Vector2 { (float)j* scaled_size, (float)i* scaled_size }, startPos, endPos, brush_size)) {
 				world[i][j].type = EMPTY;
-				world[i][j].color = color_lookup(EMPTY);
+				world[i][j].color = ColorLookup(EMPTY);
 			}
 
 		}

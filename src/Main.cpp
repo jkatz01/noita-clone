@@ -4,9 +4,6 @@
 
 SandWorld* world;
 
-
-
-
 int main() {
 	world = new SandWorld();
 
@@ -14,7 +11,7 @@ int main() {
 	//SetTargetFPS(0);
 	
 
-	world->make_one_chunk_world();
+	world->MakeOneTileWorld();
 
 	while (!WindowShouldClose()) {
 		BeginDrawing();

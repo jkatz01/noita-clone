@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\SandChunk.cpp">
+    <ClCompile Include="src\SandTile.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Main.cpp">
@@ -24,7 +24,7 @@
     <ClCompile Include="src\SandWorld.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\IntVector.cpp">
+    <ClCompile Include="src\IntVector.h">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -127,11 +127,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\IntVector.cpp" />
+    <ClCompile Include="src\IntVector.h" />
     <ClCompile Include="src\SandWorld.cpp" />
     <Text Include="old\old_program.txt" />
     <ClCompile Include="src\Main.cpp" />
-    <ClCompile Include="src\SandChunk.cpp" />
+    <ClCompile Include="src\SandTile.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="assets\beautifu.png" />
