@@ -55,13 +55,12 @@ public:
 
     // Maybe better to copy value?
     const std::vector<IntVector>* GetMovementDirections(ParticleType t) {
-        switch (t) {
-            case EMPTY:     return &MT_STATIC;
-            case STONE:     return &MT_STATIC;
-            case DOWN_ONLY: return &MT_DOWN_ONLY;
-            case SAND:      return &MT_POWDER;
-            default:        return &MT_STATIC;
+        for (int i = 0; i < PARTICLE_TYPE_COUNT; i++) {
+            if (t == direction_ref[i].type) {
+                return direction_ref[i].directions;
+            }
         }
+        return nullptr;
     }
 
 
