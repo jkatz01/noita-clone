@@ -347,7 +347,7 @@ void update_gas(Particle** world, int x, int y, int world_size) {
 		Vector2 test_vel = { 0, -1 };
 		move_by_velocity(world, x, y, test_vel);
 		return;
-	}
+	}+
 
 	if (my_pos.up_right && density_lookup(world[y - 1][x + 1].type) < density_lookup(world[y][x].type)) {
 		Vector2 test_vel = { 2, -1 };

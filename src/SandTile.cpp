@@ -16,7 +16,7 @@ struct ParticleUpdate {
 
 class SandTile {
 public:
-    Vector2     position = {0,0};
+    IntVector     position = {0,0};
     const int   size = 100;
 
     Particle* grid = nullptr;
@@ -45,10 +45,38 @@ public:
         return ((pos.x >= 0 && pos.x < size) && (pos.y >= 0 && pos.y < size));
     }
 
+    Color ColorLookup(ParticleType type) {
+        switch (type) {
+        case EMPTY: return CLITERAL(Color) { 0, 0, 0, 100 };
+        case STONE: return DARKBROWN;
+        case SAND: return YELLOW;
+        case WATER: return BLUE;
+        default: return RED;
+        }
+    }
+
     void AddMaterialSquare(IntVector pos, int size, ParticleType m_type) {
         for (int i = pos.x; i < pos.x + size; i++) {
             for (int j = pos.y; j < pos.y + size; j++) {
-                if (InBounds(IntVector {i, j})) GetParticleAt(IntVector {i, j})->type = m_type;
+                if (InBounds(IntVector {i, j})) {
+                    GetParticleAt(IntVector {i, j})->type = m_type;
+                    GetParticleAt(IntVector{ i, j })->colour = ColorLookup(m_type);
+                }
+
+            }
+        }
+    }
+
+    void AddMaterialCircle(IntVector pos, int size, ParticleType m_type) {
+        size = size/2;
+        for (int i = - size; i < size; i++) {
+            for (int j = - size; j < size; j++) {
+                if (i * i + j * j <= size * size) {
+                    if (InBounds(IntVector{ i + pos.x, j + pos.y })) {
+                        GetParticleAt(IntVector{ i + pos.x, j + pos.y })->type = m_type;
+                        GetParticleAt(IntVector{ i + pos.x, j + pos.y })->colour = ColorLookup(m_type);
+                    }
+                }
             }
         }
     }
@@ -76,7 +104,7 @@ public:
         return (x > 0) - (x < 0);
     }
 
-    void MoveTowards(IntVector pos, Vector2 vel) {
+    IntVector MoveVelocity(IntVector pos, Vector2 vel) {
 
         int initial_x = pos.x, initial_y = pos.y;
 
@@ -96,7 +124,7 @@ public:
             if (e2 > -dy) {
                 err -= dy;
                 pos.x += sx;
-                if (!CheckEmptyAndInBounds(IntVector { pos.x, pos.y})) {
+                if (!CheckEmptyAndInBounds(pos)) {
                     pos.x -= sx;
                     break;
                 }
@@ -104,20 +132,17 @@ public:
             else if (e2 < dx) {
                 err += dx;
                 pos.y += sy;
-                if (!CheckEmptyAndInBounds(IntVector { pos.x, pos.y})) {
+                if (!CheckEmptyAndInBounds(pos)) {
                     pos.y -= sy;
                     break;
                 }
             }
+        }
 
-        }
-        // TODO: need better way to slow down particles
-        if (!(initial_x == pos.x && initial_y == pos.y)) {
-            GetParticleAt({initial_x, initial_y})->velocity = {0, 0};
-            QueueUpdateSwapParticles(IntVector(initial_x, initial_y), pos);
-        }
+        return pos;
     }
 
+    // can move to
     bool CheckEmptyAndInBounds(IntVector pos) {
         return InBounds(pos) && GetParticleAt(pos)->type == EMPTY;
     }
@@ -147,13 +172,14 @@ public:
         }
     }
 
-    void ApplyGravity(IntVector pos) {
-    
+    void ApplyGravity(Particle* p) {
+        p->velocity.y += gravity;
     }
 
     void UpdateParticle(IntVector pos) {
         Particle* p = GetParticleAt(pos);
         const std::vector<IntVector> *mv = GetMovementDirections(p->type);
+
         for (IntVector dir : *mv) {
             IntVector new_pos = { pos.x + dir.x, pos.y + dir.y };
             if (InBounds(new_pos) && CanReplaceParticle(pos, new_pos)) {
@@ -162,7 +188,21 @@ public:
             }
         }
 
-        MoveTowards(pos, p->velocity);
+        IntVector end_pos = MoveVelocity(pos, p->velocity);
+
+        if (p->velocity.y > 0) {
+            p->velocity = {0, 0};
+        }
+        else {
+            p->velocity = {0, 0};
+        }
+        
+
+        // TODO: need better way to slow down particles
+        if (!(end_pos.x == pos.x && end_pos.y == pos.y)) {
+            DrawLine(pos.x*8 + 4, pos.y*8 + 4, end_pos.x*8 + 4, end_pos.y*8 + 4, WHITE);
+            QueueUpdateSwapParticles(pos, end_pos);
+        }
     }
 
     void IterateTile() {

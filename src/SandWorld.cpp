@@ -1,3 +1,5 @@
+#pragma once
+
 #include <iostream>
 #include "raylib.h"
 #include "SandTile.cpp"
@@ -27,19 +29,10 @@ public:
 		// Draw material at mouse position
 	}
 
-	Color ColorLookup(ParticleType type) {
-		switch (type) {
-		case EMPTY: return CLITERAL(Color) { 0, 0, 0, 100 };
-		case STONE: return DARKBROWN;
-		case SAND: return YELLOW;
-		default: return RED;
-		}
-	}
-
 	void MakeOneTileWorld() {
 		srand(seed);
 		first_chunk = new SandTile();
-		first_chunk->AddMaterialSquare(IntVector {50, 10}, 10, SAND);
+		first_chunk->AddMaterialSquare(IntVector {0, 90}, 30, WATER);
 	}
 
 	void UpdateOneTileWorld() {
@@ -50,7 +43,7 @@ public:
 		for (int i = 0; i < chunk_size; i++) {
 			for (int j = 0; j < chunk_size; j++) {
 				DrawRectangle(i * scaled_size, j * scaled_size, scaled_size, scaled_size, 
-								ColorLookup(first_chunk->grid[first_chunk->index(i, j)].type));
+								(first_chunk->grid[first_chunk->index(i, j)].colour));
 			}
 		}
 	}
@@ -89,8 +82,17 @@ public:
 	void AddParticles() {
 		IntVector scaled_pos = CursorToWorld({ GetMouseX(), GetMouseY() });
 
+		static ParticleType choice = SAND;
+
+		if (IsKeyPressed(KEY_Q)) {
+			choice = SAND;
+		}
+		else if (IsKeyPressed(KEY_W)) {
+			choice = WATER;
+		}
+
 		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-			first_chunk->AddMaterialSquare(scaled_pos, 10, SAND);
+			first_chunk->AddMaterialCircle(scaled_pos, 5, choice);
 		}
 		else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
 			first_chunk->AddMaterialSquare(scaled_pos, 10, EMPTY);
