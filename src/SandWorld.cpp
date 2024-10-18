@@ -20,11 +20,8 @@ public:
 		IntVector new_pos = {pos.x / scaled_size, pos.y / scaled_size};
 		return new_pos;
 	}
-	void WorldToChunk() {
-		// World position to chunk and position in chunk
-	}
 	void CursorToChunk() {
-		// Above two functions combined
+		// Mouse position to tile and position in tile
 	}
 	void draw() {
 		// Draw material at mouse position
@@ -64,24 +61,33 @@ public:
 		UpdateOneTileWorld();
 		DrawOneTileWorld();
 		DrawFps();
+		DrawMousePos();
 	}
 	
 	void DrawFps() {
 		char fps_msg[8];
 		_itoa_s(GetFPS(), fps_msg, 8, 10);
-		DrawText(fps_msg, 600, 50, 40, BLACK);
+		DrawText(fps_msg, 600, 50, 20, BLACK);
 	}
 
-	void AddParticles() {
+	void DrawMousePos() {
 		IntVector scaled_pos = CursorToWorld({ GetMouseX(), GetMouseY() });
 
 		char mouse_pos[100];
 		snprintf(mouse_pos, 100, "X: %d, Y: %d", GetMouseX(), GetMouseY());
-		DrawText(mouse_pos, 50, 50, 40, BLACK);
+		DrawText(mouse_pos, 50, 50, 20, BLACK);
 
 		char mouse_pos_s[100];
 		snprintf(mouse_pos_s, 100, "X: %d, Y: %d", scaled_pos.x, scaled_pos.y);
-		DrawText(mouse_pos_s, 50, 100, 40, BLACK);
+		DrawText(mouse_pos_s, 50, 80, 20, BLACK);
+
+		char tile[10];
+		snprintf(tile, 10, "Tile: %d", 1);
+		DrawText(tile, 50, 110, 20, BLACK);
+	}
+
+	void AddParticles() {
+		IntVector scaled_pos = CursorToWorld({ GetMouseX(), GetMouseY() });
 
 		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
 			first_chunk->AddMaterialSquare(scaled_pos, 10, SAND);

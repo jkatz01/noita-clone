@@ -25,7 +25,7 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\IntVector.h">
-      <Filter>Source Files</Filter>
+      <Filter>Header Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -40,5 +40,10 @@
     <Text Include="old\old_program.txt">
       <Filter>Source Files</Filter>
     </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\SandData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

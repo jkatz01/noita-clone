@@ -7,32 +7,12 @@
 #include "raymath.h"
 
 #include "IntVector.h"
-
-enum ParticleType {
-	EMPTY,
-    STONE,
-    SAND
-};
-
-enum MovementType {
-    MT_STATIC,
-    MT_DOWN,
-    MT_POWDER,
-    MT_LIQUID,
-    MT_GAS
-};
-
-struct Particle {
-    ParticleType type;
-    Vector2      velocity = {0, 0};
-    Color        colour = YELLOW;
-};
+#include "SandData.h"
 
 struct ParticleUpdate {
     IntVector pos;
     Particle  particle;
 };
-
 
 class SandTile {
 public:
@@ -41,6 +21,8 @@ public:
 
     Particle* grid = nullptr;
     std::vector<ParticleUpdate> updates; // Maybe instead of updates, let each Particle have a currrent state and next state
+
+
 
     SandTile() {
         grid = new Particle[size * size];
@@ -71,12 +53,14 @@ public:
         }
     }
 
-    MovementType GetMovementType(ParticleType t) {
+    // Maybe better to copy value?
+    const std::vector<IntVector>* GetMovementDirections(ParticleType t) {
         switch (t) {
-            case EMPTY: return MT_STATIC;
-            case STONE: return MT_STATIC;
-            case SAND: return MT_POWDER;
-            default: return MT_STATIC;
+            case EMPTY:     return &MT_STATIC;
+            case STONE:     return &MT_STATIC;
+            case DOWN_ONLY: return &MT_DOWN_ONLY;
+            case SAND:      return &MT_POWDER;
+            default:        return &MT_STATIC;
         }
     }
 
@@ -87,7 +71,6 @@ public:
         }
 
         return &grid[index(pos)];
-
     }
 
     int signum(float x) {
@@ -129,7 +112,7 @@ public:
             }
 
         }
-
+        // TODO: need better way to slow down particles
         if (!(initial_x == pos.x && initial_y == pos.y)) {
             GetParticleAt({initial_x, initial_y})->velocity = {0, 0};
             QueueUpdateSwapParticles(IntVector(initial_x, initial_y), pos);
@@ -165,41 +148,22 @@ public:
         }
     }
 
-    void UpdateDownMovement(IntVector pos, Particle *p) {
-        p->velocity = {0, 1};
-    }
-
-    void UpdatePowderMovement(IntVector pos, Particle* p) {
-        IntVector pos_down = { pos.x, pos.y + 1 };
-        IntVector pos_down_left = { pos.x - 1, pos.y + 1 };
-        IntVector pos_down_right = { pos.x + 1, pos.y + 1 };
-        if (InBounds(pos_down) && CanReplaceParticle(pos, pos_down) ) {
-            p->velocity = {0, 1};
-        }
-        else if (InBounds(pos_down_left) && CanReplaceParticle(pos, pos_down_left)) {
-            p->velocity = { -1, 1 };
-        }
-        else if (InBounds(pos_down_right) && CanReplaceParticle(pos, pos_down_right)) {
-            p->velocity = { 1, 1 };
-        }
+    void ApplyGravity(IntVector pos) {
+    
     }
 
     void UpdateParticle(IntVector pos) {
-        Particle *p = GetParticleAt(pos);
-        switch (GetMovementType(p->type)) {
-            case MT_STATIC: 
-                p->velocity = { 0, 0 };
+        Particle* p = GetParticleAt(pos);
+        const std::vector<IntVector> *mv = GetMovementDirections(p->type);
+        for (IntVector dir : *mv) {
+            IntVector new_pos = { pos.x + dir.x, pos.y + dir.y };
+            if (InBounds(new_pos) && CanReplaceParticle(pos, new_pos)) {
+                p->velocity = {(float)dir.x, (float)dir.y};
                 break;
-            case MT_DOWN:
-                UpdateDownMovement(pos, p);
-                break;
-            case MT_POWDER:
-                UpdatePowderMovement(pos, p);
-                break;
+            }
         }
-        if (InBounds(IntVector{ pos.x, pos.y + (int)p->velocity.y })) {
-            MoveTowards(pos, p->velocity);
-        }
+
+        MoveTowards(pos, p->velocity);
     }
 
     void IterateTile() {
