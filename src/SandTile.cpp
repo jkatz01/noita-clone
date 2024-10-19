@@ -17,16 +17,18 @@ struct ParticleUpdate {
 class SandTile {
 public:
     IntVector     position = {0,0};
-    const int   size = 100;
+    int           size = 100;
 
     Particle* grid = nullptr;
     std::vector<ParticleUpdate> updates; 
 
+    SandTile(int _size) {
+        size = _size;
+        if (size < 10) size = 10;
+        int g_size = size * size;
 
-
-    SandTile() {
-        grid = new Particle[size * size];
-        for (int i = 0; i < size * size; i++) {
+        grid = new Particle[g_size];
+        for (int i = 0; i < g_size; i++) {
             grid[i].type = EMPTY;
         }
     }
@@ -51,6 +53,7 @@ public:
         case STONE: return DARKBROWN;
         case SAND: return YELLOW;
         case WATER: return BLUE;
+        case STEAM: return  CLITERAL(Color) { 200, 200, 200, 255 };
         default: return RED;
         }
     }
@@ -82,13 +85,8 @@ public:
     }
 
     // Maybe better to copy value?
-    const std::vector<IntVector>* GetMovementDirections(ParticleType t) {
-        for (int i = 0; i < PARTICLE_TYPE_COUNT; i++) {
-            if (t == direction_ref[i].type) {
-                return direction_ref[i].directions;
-            }
-        }
-        return nullptr;
+    const std::vector<Vector2>* GetMovementDirections(ParticleType t) {
+        return direction_ref[t];
     }
 
 
@@ -106,37 +104,38 @@ public:
 
     IntVector MoveVelocity(IntVector pos, Vector2 vel) {
 
-        int initial_x = pos.x, initial_y = pos.y;
+        IntVector ivel = {(int)vel.x, (int)vel.y};
+        IntVector ipos = {pos.x, pos.y};
         Particle *initial_p = GetParticleAt(pos);
 
-        int dx = abs(vel.x);
-        int dy = abs(vel.y);
+        int dx = abs(ivel.x);
+        int dy = abs(ivel.y);
 
-        int sx = signum(vel.x);
-        int sy = signum(vel.y);
+        int sx = signum(ivel.x);
+        int sy = signum(ivel.y);
 
         int err = dx - dy;
 
         while (true) {
-            if ((pos.x == initial_x +vel.x && pos.y == initial_y +vel.y)) {
+            if ((pos.x == ipos.x + ivel.x && pos.y == ipos.y + ivel.y)) {
                 break;
             }
             int e2 = 2 * err;
             if (e2 > -dy) {
                 err -= dy;
                 pos.x += sx;
-                if (!CheckEmptyAndInBounds(pos)) {
+                if (!CanReplaceParticle(ipos, pos)) {
                     pos.x -= sx;
-                    initial_p->velocity.x = 0;
+                    initial_p->velocity.x = 0; // SIDE EFFECT: Changes velocity
                     break;
                 }
             }
             else if (e2 < dx) {
                 err += dx;
                 pos.y += sy;
-                if (!CheckEmptyAndInBounds(pos)) {
+                if (!CanReplaceParticle(ipos, pos)) {
                     pos.y -= sy;
-                    initial_p->velocity.y = 0;
+                    initial_p->velocity.y = 0; // SIDE EFFECT: Changes velocity
                     break;
                 }
             }
@@ -157,21 +156,32 @@ public:
     }
 
     bool CanReplaceParticle(IntVector v1, IntVector v2) {
-        Particle *p1 = GetParticleAt(v1);
-        Particle *p2 = GetParticleAt(v2);
         if (!InBounds(v2)) {
             return false;
         }
-        if (p2->type == EMPTY) {
+        if (CheckEmptyAndInBounds(v2)) {
             return true;
         }
-        else {
-            return false;
+        
+        Particle* p1 = GetParticleAt(v1);
+        Particle* p2 = GetParticleAt(v2);
+
+        if ( density_ref[p1->type] > density_ref[p2->type]) {
+            p1->velocity = {0,0}; // SIDE EFFECT: Changes velocity
+            return true;
         }
+        return false;
     }
 
     void ApplyGravity(Particle* p) {
-        p->velocity.y += gravity;
+        p->velocity.y += gravity * grav_ref[p->type];
+    }
+    void ApplyDrag(Particle* p) {
+        if (abs(p->velocity.y) < 1) {
+            return;
+        }
+        int sx = signum((int)p->velocity.x);
+        p->velocity.x -= sx * drag_ref[p->type];
     }
 
     void UpdateParticle(IntVector pos) {
@@ -181,25 +191,27 @@ public:
             return;
         }
 
-        const std::vector<IntVector> *mv = GetMovementDirections(p->type);
-
-        if (p->velocity.x == 0 && p->velocity.y == 0) {
-            for (IntVector dir : *mv) {
-                IntVector new_pos = { pos.x + dir.x, pos.y + dir.y };
+        // get new velocity
+        if (abs(p->velocity.x) < 1 && abs(p->velocity.y) < 1) {
+            const std::vector<Vector2>* mv = GetMovementDirections(p->type);
+            for (Vector2 dir : *mv) {
+                IntVector new_pos = { pos.x + (int)dir.x, pos.y + (int)dir.y };
 
                 if (InBounds(new_pos) && CanReplaceParticle(pos, new_pos)) {
-                    p->velocity = { (float)dir.x, (float)dir.y };
+                    p->velocity = { dir.x, dir.y };
                     break;
                 }
             }
+        }
+        else {
+            ApplyDrag(p);
         }
         
         ApplyGravity(p);
         
         IntVector end_pos = MoveVelocity(pos, p->velocity);
         if (!(end_pos.x == pos.x && end_pos.y == pos.y)) {
-            DrawLine(pos.x*8 + 4, pos.y*8 + 4, end_pos.x*8 + 4, end_pos.y*8 + 4, WHITE);
-            //std::cout << "Swapped " << pos.x << ", " << pos.y << " With " << end_pos.x << ", " << end_pos.y << std::endl;
+            DrawLine(pos.x*2 + 1, pos.y*2 + 1, end_pos.x*2 + 1, end_pos.y*2 + 1, WHITE);
             QueueUpdateSwapParticles(pos, end_pos);
         }
     }

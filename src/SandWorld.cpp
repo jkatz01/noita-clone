@@ -3,12 +3,13 @@
 #include <iostream>
 #include "raylib.h"
 #include "SandTile.cpp"
+#include "SandData.h"
 
 class SandWorld {
 public:
 	// Currently the world is just one chunk
 
-	const int chunk_size = 100; // must match the SandTile size
+	const int chunk_size = 400; // must match the SandTile size
 	const int screen_size = 800;
 	const int scaled_size = screen_size / chunk_size;
 
@@ -31,7 +32,7 @@ public:
 
 	void MakeOneTileWorld() {
 		srand(seed);
-		first_chunk = new SandTile();
+		first_chunk = new SandTile(chunk_size);
 		first_chunk->AddMaterialSquare(IntVector {0, 90}, 5, WATER);
 	}
 
@@ -83,19 +84,30 @@ public:
 		IntVector scaled_pos = CursorToWorld({ GetMouseX(), GetMouseY() });
 
 		static ParticleType choice = SAND;
+		static int brush_size = 20;
 
-		if (IsKeyPressed(KEY_Q)) {
+		char tile[10];
+		snprintf(tile, 10, type_names[choice].c_str(), 1);
+		DrawText(tile, 50, 140, 20, BLACK);
+
+		if (IsKeyPressed(KEY_ONE)) {
 			choice = SAND;
 		}
-		else if (IsKeyPressed(KEY_W)) {
+		else if (IsKeyPressed(KEY_TWO)) {
 			choice = WATER;
+		}
+		else if (IsKeyPressed(KEY_THREE)) {
+			choice = STONE;
+		}
+		else if (IsKeyPressed(KEY_FOUR)) {
+			choice = STEAM;
 		}
 
 		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-			first_chunk->AddMaterialCircle(scaled_pos, 5, choice);
+			first_chunk->AddMaterialCircle(scaled_pos, brush_size, choice);
 		}
 		else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
-			first_chunk->AddMaterialSquare(scaled_pos, 10, EMPTY);
+			first_chunk->AddMaterialSquare(scaled_pos, brush_size, EMPTY);
 		}
 	}
 };

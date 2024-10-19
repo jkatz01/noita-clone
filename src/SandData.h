@@ -4,16 +4,17 @@
 #include "IntVector.h"
 #include "raylib.h"
 
-#define PARTICLE_TYPE_COUNT 5
+#define PARTICLE_TYPE_COUNT 6
 
-const float gravity = 1;
+const float gravity = 0.2f;
 
 enum ParticleType {
-    EMPTY,
+    EMPTY = 0,
     STONE,
     DOWN_ONLY,
     SAND,
     WATER,
+    STEAM
 };
 
 struct Particle {
@@ -23,21 +24,53 @@ struct Particle {
 };
 
 // Movement Directions
-const std::vector<IntVector> MT_STATIC      = { {0, 0} };
-const std::vector<IntVector> MT_DOWN_ONLY   = { {0, 1} };
-const std::vector<IntVector> MT_POWDER      = { {0, 1}, {-1, 1}, {1, 1} };
-const std::vector<IntVector> MT_LIQUID      = { {0, 1}, {-1, 1}, {1, 1}, {-1, 0}, {1, 0} };
+const std::vector<Vector2> MT_STATIC      = { {0, 0} };
+const std::vector<Vector2> MT_DOWN_ONLY   = { {0, 1} };
+const std::vector<Vector2> MT_POWDER      = { {0, 1}, {-1, 1}, {1, 1} };
+const std::vector<Vector2> MT_LIQUID      = { {0, 1}, {-1, 1}, {1, 1}, {-1, 0}, {1, 0} };
+const std::vector<Vector2> MT_GAS         = { {0, -1}, {-1, -1}, {1, -1}, {-1, 0}, {1, 0} };
 
 // Particle Type Movement Direction Reference
-struct DirectionRef {
-    ParticleType type;
-    const std::vector<IntVector>* directions;
+
+static const std::vector<Vector2>* direction_ref[PARTICLE_TYPE_COUNT] = {
+    &MT_STATIC, //EMPTY
+    &MT_STATIC,
+    &MT_DOWN_ONLY,
+    &MT_POWDER,
+    &MT_LIQUID, //WATER
+    &MT_GAS
 };
 
-const DirectionRef direction_ref[PARTICLE_TYPE_COUNT] = {
-    {EMPTY,     &MT_STATIC},
-    {STONE,     &MT_STATIC},
-    {DOWN_ONLY, &MT_DOWN_ONLY},
-    {SAND,      &MT_POWDER},
-    {WATER,     &MT_LIQUID}
+// TODO: Make these shorts stored in the particle?
+static const float density_ref[PARTICLE_TYPE_COUNT] = {
+    -1, //EMPTY
+    2,
+    2,
+    2,
+    1, //WATER
+    0
+};
+
+static const int drag_ref[PARTICLE_TYPE_COUNT] = {
+    1, //EMPTY
+    1,
+    1,
+    1, //SAND
+    0,  //WATER
+    1
+};
+
+static const int grav_ref[PARTICLE_TYPE_COUNT] = {
+    0, //EMPTY
+    0, //STONE
+    1, //DOWN ONLY
+    1, //SAND
+    1,  //WATER
+    0  //STEAM
+};
+
+//
+
+static const std::string type_names[PARTICLE_TYPE_COUNT] = {
+    "empty", "stone", "down_only", "sand", "water"
 };
