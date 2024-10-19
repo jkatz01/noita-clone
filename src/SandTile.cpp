@@ -176,19 +176,27 @@ public:
 
     void UpdateParticle(IntVector pos) {
         Particle* p = GetParticleAt(pos);
+
+        if (p->type == EMPTY) {
+            return;
+        }
+
         const std::vector<IntVector> *mv = GetMovementDirections(p->type);
 
-        for (IntVector dir : *mv) {
-            IntVector new_pos = { pos.x + dir.x, pos.y + dir.y };
+        if (p->velocity.x == 0 && p->velocity.y == 0) {
+            for (IntVector dir : *mv) {
+                IntVector new_pos = { pos.x + dir.x, pos.y + dir.y };
 
-            if (InBounds(new_pos) && CanReplaceParticle(pos, new_pos)) {
-                p->velocity = { (float)dir.x, (float)dir.y };
-                break;
+                if (InBounds(new_pos) && CanReplaceParticle(pos, new_pos)) {
+                    p->velocity = { (float)dir.x, (float)dir.y };
+                    break;
+                }
             }
         }
         
+        ApplyGravity(p);
+        
         IntVector end_pos = MoveVelocity(pos, p->velocity);
-        p->velocity = {0, 0};
         if (!(end_pos.x == pos.x && end_pos.y == pos.y)) {
             DrawLine(pos.x*8 + 4, pos.y*8 + 4, end_pos.x*8 + 4, end_pos.y*8 + 4, WHITE);
             //std::cout << "Swapped " << pos.x << ", " << pos.y << " With " << end_pos.x << ", " << end_pos.y << std::endl;
@@ -203,12 +211,12 @@ public:
         for (int i = 0; i < size; i++) {
             if (i % 2 == 0) {
                 for (int j = 0; j < size; j++) {
-                    UpdateParticle(IntVector{ i, j });
+                    UpdateParticle(IntVector{ j, i });
                 }
             }
             else {
                 for (int j = size - 1; j >= 0; j--) {
-                    UpdateParticle(IntVector{ i, j });
+                    UpdateParticle(IntVector{ j, i });
                 }
             }
         }
