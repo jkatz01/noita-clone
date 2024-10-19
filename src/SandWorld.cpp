@@ -32,7 +32,7 @@ public:
 	void MakeOneTileWorld() {
 		srand(seed);
 		first_chunk = new SandTile();
-		first_chunk->AddMaterialSquare(IntVector {0, 90}, 30, WATER);
+		first_chunk->AddMaterialSquare(IntVector {0, 90}, 5, WATER);
 	}
 
 	void UpdateOneTileWorld() {

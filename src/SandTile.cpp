@@ -10,8 +10,8 @@
 #include "SandData.h"
 
 struct ParticleUpdate {
-    IntVector pos;
-    Particle  particle;
+    IntVector source;
+    IntVector dest;
 };
 
 class SandTile {
@@ -20,7 +20,7 @@ public:
     const int   size = 100;
 
     Particle* grid = nullptr;
-    std::vector<ParticleUpdate> updates; // Maybe instead of updates, let each Particle have a currrent state and next state
+    std::vector<ParticleUpdate> updates; 
 
 
 
@@ -107,6 +107,7 @@ public:
     IntVector MoveVelocity(IntVector pos, Vector2 vel) {
 
         int initial_x = pos.x, initial_y = pos.y;
+        Particle *initial_p = GetParticleAt(pos);
 
         int dx = abs(vel.x);
         int dy = abs(vel.y);
@@ -126,6 +127,7 @@ public:
                 pos.x += sx;
                 if (!CheckEmptyAndInBounds(pos)) {
                     pos.x -= sx;
+                    initial_p->velocity.x = 0;
                     break;
                 }
             }
@@ -134,6 +136,7 @@ public:
                 pos.y += sy;
                 if (!CheckEmptyAndInBounds(pos)) {
                     pos.y -= sy;
+                    initial_p->velocity.y = 0;
                     break;
                 }
             }
@@ -149,13 +152,8 @@ public:
 
 
     void QueueUpdateSwapParticles(IntVector v1, IntVector v2) {
-        Particle p1, p2;
 
-        p1 = *GetParticleAt(v1);
-        p2 = *GetParticleAt(v2);
-
-        updates.push_back({ IntVector {v1.x, v1.y}, p2 });
-        updates.push_back({ IntVector {v2.x, v2.y}, p1 });
+        updates.push_back({v1, v2});
     }
 
     bool CanReplaceParticle(IntVector v1, IntVector v2) {
@@ -182,46 +180,26 @@ public:
 
         for (IntVector dir : *mv) {
             IntVector new_pos = { pos.x + dir.x, pos.y + dir.y };
+
             if (InBounds(new_pos) && CanReplaceParticle(pos, new_pos)) {
-                p->velocity = {(float)dir.x, (float)dir.y};
+                p->velocity = { (float)dir.x, (float)dir.y };
                 break;
             }
         }
-
-        IntVector end_pos = MoveVelocity(pos, p->velocity);
-
-        if (p->velocity.y > 0) {
-            p->velocity = {0, 0};
-        }
-        else {
-            p->velocity = {0, 0};
-        }
         
-
-        // TODO: need better way to slow down particles
+        IntVector end_pos = MoveVelocity(pos, p->velocity);
+        p->velocity = {0, 0};
         if (!(end_pos.x == pos.x && end_pos.y == pos.y)) {
             DrawLine(pos.x*8 + 4, pos.y*8 + 4, end_pos.x*8 + 4, end_pos.y*8 + 4, WHITE);
+            //std::cout << "Swapped " << pos.x << ", " << pos.y << " With " << end_pos.x << ", " << end_pos.y << std::endl;
             QueueUpdateSwapParticles(pos, end_pos);
         }
     }
 
-    void IterateTile() {
-        // Update every particle based on old grid
-        for (int i = 0; i < size; i++) {
-            for (int j = 0; j < size; j++) {
-                UpdateParticle(IntVector {i, j});
-            }
-        }
-
-        // Update grid
-        for (ParticleUpdate &pu : updates) {
-            grid[index(pu.pos)] = pu.particle;
-        }
-        updates.clear();
-    }
 
     void IterateTileAlternate() {
         // Update every particle based on old grid
+        
         for (int i = 0; i < size; i++) {
             if (i % 2 == 0) {
                 for (int j = 0; j < size; j++) {
@@ -234,10 +212,13 @@ public:
                 }
             }
         }
-
         // Update grid
+        // TODO: -----------------------------------
+        // remove moves where destination has been filled
         for (ParticleUpdate& pu : updates) {
-            grid[index(pu.pos)] = pu.particle;
+            Particle temp = *GetParticleAt(pu.source);
+            grid[index(pu.source)] = *GetParticleAt(pu.dest);
+            grid[index(pu.dest)] = temp;
         }
         updates.clear();
     }
