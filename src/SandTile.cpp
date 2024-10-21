@@ -47,13 +47,20 @@ public:
         return ((pos.x >= 0 && pos.x < size) && (pos.y >= 0 && pos.y < size));
     }
 
+    float rand_range(float min, float max)
+    {
+        float random = (float)rand() / RAND_MAX;
+        float range = max - min;
+        return (random * range) + min;
+    }
+
     Color ColorLookup(ParticleType type) {
         switch (type) {
         case EMPTY: return CLITERAL(Color) { 0, 0, 0, 100 };
-        case STONE: return DARKBROWN;
-        case SAND: return YELLOW;
-        case WATER: return BLUE;
-        case STEAM: return  CLITERAL(Color) { 200, 200, 200, 255 };
+        case STONE: return ColorBrightness(DARKBROWN, rand_range(-0.3f, 0.1f));;
+        case SAND: return ColorBrightness(BROWN, rand_range(-0.3f, 0.3f));
+        case WATER: return WATER_BLUE;
+        case STEAM: return  ColorTint(WHITE, ColorBrightness(BLUE, rand_range(0.5, 0.7f)));
         default: return RED;
         }
     }
@@ -62,8 +69,11 @@ public:
         for (int i = pos.x; i < pos.x + size; i++) {
             for (int j = pos.y; j < pos.y + size; j++) {
                 if (InBounds(IntVector {i, j})) {
-                    GetParticleAt(IntVector {i, j})->type = m_type;
-                    GetParticleAt(IntVector{ i, j })->colour = ColorLookup(m_type);
+                    Particle *p = GetParticleAt(IntVector{ i, j });
+                    if (p->type == EMPTY) {
+                        p->type = m_type;
+                        p->colour = ColorLookup(m_type);
+                    }
                 }
 
             }
@@ -75,9 +85,27 @@ public:
         for (int i = - size; i < size; i++) {
             for (int j = - size; j < size; j++) {
                 if (i * i + j * j <= size * size) {
-                    if (InBounds(IntVector{ i + pos.x, j + pos.y })) {
-                        GetParticleAt(IntVector{ i + pos.x, j + pos.y })->type = m_type;
-                        GetParticleAt(IntVector{ i + pos.x, j + pos.y })->colour = ColorLookup(m_type);
+                    if (InBounds({ i + pos.x, j + pos.y })) {
+                        Particle *p = GetParticleAt({ i + pos.x, j + pos.y });
+                        if (p->type == EMPTY) {
+                            p->type = m_type;
+                            p->colour = ColorLookup(m_type);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    void DeleteMaterialCircle(IntVector pos, int size) {
+        size = size / 2;
+        for (int i = -size; i < size; i++) {
+            for (int j = -size; j < size; j++) {
+                if (i * i + j * j <= size * size) {
+                    if (InBounds({ i + pos.x, j + pos.y })) {
+                        Particle* p = GetParticleAt({ i + pos.x, j + pos.y });
+                        p->type = EMPTY;
+                        p->colour = ColorLookup(EMPTY);
                     }
                 }
             }
@@ -174,6 +202,9 @@ public:
     }
 
     void ApplyGravity(Particle* p) {
+        if (abs(p->velocity.y) > max_vel_ref[p->type]) {
+            return;
+        }
         p->velocity.y += gravity * grav_ref[p->type];
     }
     void ApplyDrag(Particle* p) {
@@ -208,10 +239,17 @@ public:
         }
         
         ApplyGravity(p);
+
+        // for chunks:
+        // let particles go out of bounds
+        // if destination is beyond bounds: pass it to appropriate chunk
+        // translate position
+        // check if first pixel is movable to
+        // restart MoveTowards in new chunk and do it on same frame
         
         IntVector end_pos = MoveVelocity(pos, p->velocity);
         if (!(end_pos.x == pos.x && end_pos.y == pos.y)) {
-            DrawLine(pos.x*2 + 1, pos.y*2 + 1, end_pos.x*2 + 1, end_pos.y*2 + 1, WHITE);
+            DrawLine(pos.x*2 + 1, pos.y*2 + 1, end_pos.x*2 + 1, end_pos.y*2 + 1, p->colour);
             QueueUpdateSwapParticles(pos, end_pos);
         }
     }

@@ -6,6 +6,9 @@
 
 #define PARTICLE_TYPE_COUNT 6
 
+#define WATER_BLUE       CLITERAL(Color){ 0, 121, 241, 150 } 
+#define WATER_BLUE_2     CLITERAL(Color){ 0, 101, 221, 130 } 
+
 const float gravity = 0.2f;
 
 enum ParticleType {
@@ -60,13 +63,22 @@ static const int drag_ref[PARTICLE_TYPE_COUNT] = {
     1
 };
 
-static const int grav_ref[PARTICLE_TYPE_COUNT] = {
+static const float grav_ref[PARTICLE_TYPE_COUNT] = {
     0, //EMPTY
     0, //STONE
     1, //DOWN ONLY
     1, //SAND
     1,  //WATER
-    0  //STEAM
+    -0.5  //STEAM
+};
+
+static const float max_vel_ref[PARTICLE_TYPE_COUNT] = {
+    0, //EMPTY
+    0, //STONE
+    1, //DOWN ONLY
+    5, //SAND
+    5,  //WATER
+    1  //STEAM
 };
 
 //

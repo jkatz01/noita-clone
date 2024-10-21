@@ -107,7 +107,7 @@ public:
 			first_chunk->AddMaterialCircle(scaled_pos, brush_size, choice);
 		}
 		else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
-			first_chunk->AddMaterialSquare(scaled_pos, brush_size, EMPTY);
+			first_chunk->DeleteMaterialCircle(scaled_pos, brush_size);
 		}
 	}
 };
