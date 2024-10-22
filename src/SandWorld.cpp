@@ -33,9 +33,16 @@ public:
 		scaled_tile_size = scaled_size / tile_width;
 	}
 
+	bool MouseInBounds(IntVector pos) {
+		return ((pos.x >= 0 && pos.x < screen_size) && (pos.y >= 0 && pos.y < screen_size));
+	}
+
 	//TODO: 
 	IntVector CursorToWorld(IntVector screen_pos) {
 		// Screen mouse position -> Grid scaled mouse position
+		if (!MouseInBounds(screen_pos)) {
+			return {0, 0};
+		}
 		IntVector new_pos = { screen_pos.x / scaled_tile_size, screen_pos.y / scaled_tile_size };
 		return new_pos;
 	}
@@ -164,6 +171,9 @@ public:
 	}
 
 	void AddParticles() {
+		if (!MouseInBounds({ GetMouseX(), GetMouseY() })) {
+			return;
+		}
 		IntVector scaled_pos = CursorToWorld({ GetMouseX(), GetMouseY() });
 		IntVector tile_pos = CursorToTile(scaled_pos);
 		IntVector inner_pos = CursorToInnerPosition(scaled_pos, tile_pos);
