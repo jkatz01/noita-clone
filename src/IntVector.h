@@ -11,6 +11,11 @@ public:
 		y = _y;
 	}
 
+	// TODO: write compare function
+
+	bool operator==(const IntVector& rhs) const {
+		return (x == rhs.x && y == rhs.y);
+	}
 
 	double dist(IntVector vec2) {
 		int dx, dy;

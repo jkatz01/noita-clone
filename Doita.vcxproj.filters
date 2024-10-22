@@ -27,6 +27,9 @@
     <ClCompile Include="src\IntVector.h">
       <Filter>Header Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\NeighbourTD.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="assets\beautifu.png">
@@ -43,6 +46,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\SandData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\NeighbourTD.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

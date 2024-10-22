@@ -4,6 +4,7 @@
 #include "raylib.h"
 #include "SandTile.cpp"
 #include "SandData.h"
+#include "NeighbourTD.h"
 
 class SandWorld {
 public:
@@ -21,7 +22,7 @@ public:
 	ParticleType brush_choice = SAND;
 	int			 brush_size = 20;
 
-	std::vector<SandTile*> world_tiles;
+	std::vector<SandTile*> world_tiles; //fixed world size for now, otherwise the indexing can get wrong
 	SandTile* first_tile = nullptr;
 
 	SandWorld(int _tile_size, int _screen_size, int _tile_width) {
@@ -70,6 +71,7 @@ public:
 			world_tiles.push_back(t);
 			world_tiles.back()->AddMaterialSquare( { 90, 90 }, 30, SAND);
 		}
+		// update each tile with all its neighbours
 	}
 
 	void UpdateMultiTileWorld() {

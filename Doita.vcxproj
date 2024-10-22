@@ -127,6 +127,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\NeighbourTD.cpp" />
     <ClCompile Include="src\IntVector.h" />
     <ClCompile Include="src\SandWorld.cpp" />
     <Text Include="old\old_program.txt" />
@@ -139,6 +140,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\SandData.h" />
+    <ClInclude Include="src\NeighbourTD.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

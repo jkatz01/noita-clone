@@ -9,7 +9,7 @@ int main() {
 
 	InitWindow(world->screen_size, world->screen_size, "World");
 	//SetTargetFPS(60);
-	
+
 	world->MakeMultiTileWorld();
 
 	while (!WindowShouldClose()) {

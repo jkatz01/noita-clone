@@ -8,28 +8,38 @@
 
 #include "IntVector.h"
 #include "SandData.h"
+#include "NeighbourTD.h"
 
 struct ParticleUpdate {
     IntVector source;
     IntVector dest;
 };
 
+// Applies all moves from neighbours from previous frames
+struct ParticleUpdateN_Move { 
+    Particle  p;
+    IntVector dest;
+};
+
 class SandTile {
 public:
     IntVector     position = {0,0};
-    int           size = 100;
+    int           tile_size = 100;
 
     Particle* grid = nullptr;
-    std::vector<ParticleUpdate> updates; 
+    std::vector<ParticleUpdate>         updates; 
+    std::vector<ParticleUpdateN_Move>   updates_to_neighours;
 
-    SandTile(int _size, IntVector _position) {
-        size = _size;
+    SandTile* tile_neighbours[8] = {nullptr}; // Starts at top middle, goes clockwise
+
+    SandTile(int _tile_size, IntVector _position) {
+        tile_size = _tile_size;
         position = _position;
-        if (size < 10) size = 10;
-        int g_size = size * size;
+        if (tile_size < 10) tile_size = 10;
+        int g_tile_size = tile_size * tile_size;
 
-        grid = new Particle[g_size];
-        for (int i = 0; i < g_size; i++) {
+        grid = new Particle[g_tile_size];
+        for (int i = 0; i < g_tile_size; i++) {
             grid[i].type = EMPTY;
         }
     }
@@ -37,15 +47,30 @@ public:
         delete grid;
     }
 
-    int index(IntVector pos) {
-        return (size * pos.y + pos.x);
+    void Addtile_n(NeighbourTD index, SandTile* t) {
+        if (index < 0 || index > 7) {
+            return;
+        }
+        tile_neighbours[index] = t;
     }
+
+    int index(IntVector pos) {
+        return (tile_size * pos.y + pos.x);
+    }
+
     int index(int x, int y) {
-        return (size * y + x);
+        return (tile_size * y + x);
     }
 
     bool InBounds(IntVector pos) {
-        return ((pos.x >= 0 && pos.x < size) && (pos.y >= 0 && pos.y < size));
+        return ((pos.x >= 0 && pos.x < tile_size) && (pos.y >= 0 && pos.y < tile_size));
+    }
+
+    bool NeighbourExists(NeighbourTD index) {
+        if (index != ND_MYSELF && tile_neighbours[index] != NULL) {
+            return true;
+        }
+        return false;
     }
 
     float rand_range(float min, float max)
@@ -131,7 +156,31 @@ public:
         return (x > 0) - (x < 0);
     }
 
-    IntVector MoveVelocity(IntVector pos, Vector2 vel) {
+
+    // Returns {-1, -1} if false
+    IntVector ReplacePositionWithNeighbour(IntVector pos, Particle *p, NeighbourTD* neighbour_moved_to) {
+        NeighbourTD n = NeighbourFromPosition(pos, tile_size);
+
+        *neighbour_moved_to = ND_MYSELF; // Fail by default
+
+        if (!NeighbourExists(n)) {
+            return { -1, -1 };
+        }
+        if (n != ND_MYSELF) {
+            // if we can replace the particle at the neighbour
+            IntVector pos_in_neighbour = TranslateParticleToNeighbour(pos, tile_size);
+            NeighbourTD n_index = NeighbourFromPosition(pos_in_neighbour, tile_size);
+
+            if (tile_neighbours[n_index]->CanReplaceParticleN(p, pos_in_neighbour)) {
+                *neighbour_moved_to = n_index;
+                return pos_in_neighbour;
+            }
+        }
+        return {-1, -1};
+    }
+
+    // Returns translated position if moved to a neighbour
+    IntVector MoveVelocity(IntVector pos, Vector2 vel, NeighbourTD *neighbour_moved_to) {
 
         IntVector ivel = {(int)vel.x, (int)vel.y};
         IntVector ipos = {pos.x, pos.y};
@@ -153,6 +202,12 @@ public:
             if (e2 > -dy) {
                 err -= dy;
                 pos.x += sx;
+
+                IntVector neighbour_pos = ReplacePositionWithNeighbour(pos, initial_p, neighbour_moved_to);
+                if (*neighbour_moved_to != ND_MYSELF) {
+                    return neighbour_pos;
+                }
+
                 if (!CanReplaceParticle(ipos, pos)) {
                     pos.x -= sx;
                     initial_p->velocity.x = 0; // SIDE EFFECT: Changes velocity
@@ -162,6 +217,12 @@ public:
             else if (e2 < dx) {
                 err += dx;
                 pos.y += sy;
+
+                IntVector neighbour_pos = ReplacePositionWithNeighbour(pos, initial_p, neighbour_moved_to);
+                if (*neighbour_moved_to != ND_MYSELF) {
+                    return neighbour_pos;
+                }
+
                 if (!CanReplaceParticle(ipos, pos)) {
                     pos.y -= sy;
                     initial_p->velocity.y = 0; // SIDE EFFECT: Changes velocity
@@ -178,25 +239,35 @@ public:
         return InBounds(pos) && GetParticleAt(pos)->type == EMPTY;
     }
 
-
-    void QueueUpdateSwapParticles(IntVector v1, IntVector v2) {
-
-        updates.push_back({v1, v2});
-    }
-
-    bool CanReplaceParticle(IntVector v1, IntVector v2) {
-        if (!InBounds(v2)) {
+    bool CanReplaceParticle(IntVector v_src, IntVector v_dst) {
+        if (!InBounds(v_dst)) {
             return false;
         }
-        if (CheckEmptyAndInBounds(v2)) {
+        if (CheckEmptyAndInBounds(v_dst)) {
             return true;
         }
         
-        Particle* p1 = GetParticleAt(v1);
-        Particle* p2 = GetParticleAt(v2);
+        Particle* p1 = GetParticleAt(v_src);
+        Particle* p2 = GetParticleAt(v_dst);
 
         if ( param_ref[p1->type].density > param_ref[p2->type].density) {
             p1->velocity = {0,0}; // SIDE EFFECT: Changes velocity
+            return true;
+        }
+        return false;
+    }
+    bool CanReplaceParticleN(Particle *p_src, IntVector v_dst) {
+        if (!InBounds(v_dst)) {
+            return false;
+        }
+        if (CheckEmptyAndInBounds(v_dst)) {
+            return true;
+        }
+        
+        Particle* p2 = GetParticleAt(v_dst);
+
+        if ( param_ref[p_src->type].density > param_ref[p2->type].density) {
+            p_src->velocity = {0,0}; // SIDE EFFECT: Changes velocity
             return true;
         }
         return false;
@@ -216,15 +287,21 @@ public:
         p->velocity.x -= sx * param_ref[p->type].drag;
     }
 
+    bool AbsVelocityLessThan(int value, Particle *p) {
+        return (abs(p->velocity.x) < value && abs(p->velocity.y) < value);
+    }
+
     void UpdateParticle(IntVector pos) {
         Particle* p = GetParticleAt(pos);
 
         if (p->type == EMPTY) {
             return;
         }
-
-        // get new velocity
-        if (abs(p->velocity.x) < 1 && abs(p->velocity.y) < 1) {
+        
+        if (!AbsVelocityLessThan(1, p)) {
+            ApplyDrag(p);
+        }
+        else { // get new velocity
             const std::vector<Vector2>* mv = GetMovementDirections(p->type);
             for (Vector2 dir : *mv) {
                 IntVector new_pos = { pos.x + (int)dir.x, pos.y + (int)dir.y };
@@ -233,39 +310,74 @@ public:
                     p->velocity = { dir.x, dir.y };
                     break;
                 }
+                else {
+                    NeighbourTD n_index = NeighbourFromPosition(new_pos, tile_size);
+                    if (NeighbourExists(n_index)) {
+                        IntVector pos_in_neighbour = TranslateParticleToNeighbour(new_pos, tile_size);
+                        bool can_replace = tile_neighbours[n_index]->CanReplaceParticleN(p, pos_in_neighbour);
+                        if (can_replace) {
+                            p->velocity = { dir.x, dir.y };
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        ApplyGravity(p);
+
+        NeighbourTD n_moved_to = ND_MYSELF;
+        IntVector end_pos = MoveVelocity(pos, p->velocity, &n_moved_to);
+
+        if (n_moved_to == ND_MYSELF) {
+            if (!(end_pos == pos)) {
+                QueueUpdateSwapParticles(pos, end_pos);
             }
         }
         else {
-            ApplyDrag(p);
+            // add to vector of NeighbourUpdates that applies all moves beforehand in neighbour 
+            // replace current pos with the particle from end_pos
+            QueueNeighbourMovementParticle(end_pos, *p, n_moved_to);
+            SwapParticle(*tile_neighbours[n_moved_to]->GetParticleAt(end_pos), pos);
         }
         
-        ApplyGravity(p);
+    }
 
-        // for chunks:
-        // let particles go out of bounds
-        // if destination is beyond bounds: pass it to appropriate chunk
-        // translate position
-        // check if first pixel is movable to
-        // restart MoveTowards in new chunk and do it on same frame
-        
-        IntVector end_pos = MoveVelocity(pos, p->velocity);
-        if (!(end_pos.x == pos.x && end_pos.y == pos.y)) {
-            QueueUpdateSwapParticles(pos, end_pos);
+    void QueueUpdateSwapParticles(IntVector v_src, IntVector v_dst) {
+        updates.push_back({ v_src, v_dst });
+    }
+
+    void QueueNeighbourMovementParticle(IntVector v_src, Particle p, NeighbourTD n_index) {
+        if (!NeighbourExists(n_index)) {
+            return;
         }
+        tile_neighbours[n_index]->updates_to_neighours.push_back({p, v_src});
+    }
+
+    // swaps source with destination
+    void SwapParticles(IntVector src, IntVector dst) {
+        Particle temp = *GetParticleAt(src);
+        grid[index(src)] = *GetParticleAt(dst);
+        grid[index(dst)] = temp;
+    }
+
+    // swaps destination for any particle
+    void SwapParticle(Particle new_p, IntVector dst) {
+        grid[index(dst)] = new_p;
     }
 
 
     void IterateTileAlternate() {
         // Update every particle based on old grid
         
-        for (int i = 0; i < size; i++) {
+        for (int i = 0; i < tile_size; i++) {
             if (i % 2 == 0) {
-                for (int j = 0; j < size; j++) {
+                for (int j = 0; j < tile_size; j++) {
                     UpdateParticle(IntVector{ j, i });
                 }
             }
             else {
-                for (int j = size - 1; j >= 0; j--) {
+                for (int j = tile_size - 1; j >= 0; j--) {
                     UpdateParticle(IntVector{ j, i });
                 }
             }
@@ -274,9 +386,7 @@ public:
         // TODO: -----------------------------------
         // remove moves where destination has been filled
         for (ParticleUpdate& pu : updates) {
-            Particle temp = *GetParticleAt(pu.source);
-            grid[index(pu.source)] = *GetParticleAt(pu.dest);
-            grid[index(pu.dest)] = temp;
+            SwapParticles(pu.source, pu.dest);
         }
         updates.clear();
     }
