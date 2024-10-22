@@ -56,12 +56,12 @@ public:
 
     Color ColorLookup(ParticleType type) {
         switch (type) {
-        case EMPTY: return CLITERAL(Color) { 0, 0, 0, 100 };
-        case STONE: return ColorBrightness(DARKBROWN, rand_range(-0.3f, 0.1f));;
-        case SAND: return ColorBrightness(BROWN, rand_range(-0.3f, 0.3f));
-        case WATER: return WATER_BLUE;
+        case EMPTY: return  CLITERAL(Color) { 0, 0, 0, 100 };
+        case STONE: return  ColorBrightness(DARKBROWN, rand_range(-0.3f, 0.1f));;
+        case SAND:  return  ColorBrightness(BROWN, rand_range(-0.3f, 0.3f));
+        case WATER: return  WATER_BLUE;
         case STEAM: return  ColorTint(WHITE, ColorBrightness(BLUE, rand_range(0.5, 0.7f)));
-        default: return RED;
+        default:    return  RED;
         }
     }
 
@@ -114,7 +114,7 @@ public:
 
     // Maybe better to copy value?
     const std::vector<Vector2>* GetMovementDirections(ParticleType t) {
-        return direction_ref[t];
+        return param_ref[t].movement_type;
     }
 
 
@@ -194,7 +194,7 @@ public:
         Particle* p1 = GetParticleAt(v1);
         Particle* p2 = GetParticleAt(v2);
 
-        if ( density_ref[p1->type] > density_ref[p2->type]) {
+        if ( param_ref[p1->type].density > param_ref[p2->type].density) {
             p1->velocity = {0,0}; // SIDE EFFECT: Changes velocity
             return true;
         }
@@ -202,17 +202,17 @@ public:
     }
 
     void ApplyGravity(Particle* p) {
-        if (abs(p->velocity.y) > max_vel_ref[p->type]) {
+        if (abs(p->velocity.y) > param_ref[p->type].max_vel) {
             return;
         }
-        p->velocity.y += gravity * grav_ref[p->type];
+        p->velocity.y += gravity * param_ref[p->type].grav;
     }
     void ApplyDrag(Particle* p) {
         if (abs(p->velocity.y) < 1) {
             return;
         }
         int sx = signum((int)p->velocity.x);
-        p->velocity.x -= sx * drag_ref[p->type];
+        p->velocity.x -= sx * param_ref[p->type].drag;
     }
 
     void UpdateParticle(IntVector pos) {

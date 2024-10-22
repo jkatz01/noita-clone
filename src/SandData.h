@@ -26,63 +26,30 @@ struct Particle {
     Color        colour = CLITERAL(Color) { 0, 0, 0, 100 };
 };
 
+struct ParticleParams {
+    const std::vector<Vector2>* movement_type;
+    const float       density;
+    const int         drag;
+    const float       grav;
+    const float       max_vel;
+    const std::string type_name;
+};
+
 // Movement Directions
-const std::vector<Vector2> MT_STATIC      = { {0, 0} };
-const std::vector<Vector2> MT_DOWN_ONLY   = { {0, 1} };
-const std::vector<Vector2> MT_POWDER      = { {0, 1}, {-1, 1}, {1, 1} };
-const std::vector<Vector2> MT_LIQUID      = { {0, 1}, {-1, 1}, {1, 1}, {-1, 0}, {1, 0} };
-const std::vector<Vector2> MT_GAS         = { {0, -1}, {-1, -1}, {1, -1}, {-1, 0}, {1, 0} };
+static const std::vector<Vector2> MT_STATIC      = { {0, 0} };
+static const std::vector<Vector2> MT_DOWN_ONLY   = { {0, 1} };
+static const std::vector<Vector2> MT_POWDER      = { {0, 1}, {-1, 1}, {1, 1} };
+static const std::vector<Vector2> MT_LIQUID      = { {0, 1}, {-1, 1}, {1, 1}, {-1, 0}, {1, 0} };
+static const std::vector<Vector2> MT_GAS         = { {0, -1}, {-1, -1}, {1, -1}, {-1, 0}, {1, 0} };
 
-// Particle Type Movement Direction Reference
-
-static const std::vector<Vector2>* direction_ref[PARTICLE_TYPE_COUNT] = {
-    &MT_STATIC, //EMPTY
-    &MT_STATIC,
-    &MT_DOWN_ONLY,
-    &MT_POWDER,
-    &MT_LIQUID, //WATER
-    &MT_GAS
+static const ParticleParams param_ref[PARTICLE_TYPE_COUNT] = {
+    {&MT_STATIC,    -1,    1,     0,    0,  "empty"},       // EMPTY
+    {&MT_STATIC,     2,    1,     0,    0,  "stone"},       // STONE
+    {&MT_DOWN_ONLY,  2,    1,     1,    1,  "down_only"},   // DOWN
+    {&MT_POWDER,     2,    1,     1,    5,  "sand"},        // SAND
+    {&MT_LIQUID,     1,    1,     1,    5,  "water"},       // WATER
+    {&MT_GAS,        0,    1, -0.5f,    1,  "steam"}        // STEAM
 };
 
-// TODO: Make these shorts stored in the particle?
-static const float density_ref[PARTICLE_TYPE_COUNT] = {
-    -1, //EMPTY
-    2,
-    2,
-    2,
-    1, //WATER
-    0
-};
 
-static const int drag_ref[PARTICLE_TYPE_COUNT] = {
-    1, //EMPTY
-    1,
-    1,
-    1, //SAND
-    0,  //WATER
-    1
-};
 
-static const float grav_ref[PARTICLE_TYPE_COUNT] = {
-    0, //EMPTY
-    0, //STONE
-    1, //DOWN ONLY
-    1, //SAND
-    1,  //WATER
-    -0.5  //STEAM
-};
-
-static const float max_vel_ref[PARTICLE_TYPE_COUNT] = {
-    0, //EMPTY
-    0, //STONE
-    1, //DOWN ONLY
-    5, //SAND
-    5,  //WATER
-    1  //STEAM
-};
-
-//
-
-static const std::string type_names[PARTICLE_TYPE_COUNT] = {
-    "empty", "stone", "down_only", "sand", "water"
-};

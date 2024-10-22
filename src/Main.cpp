@@ -18,8 +18,6 @@ int main() {
 
 		world->executeFrame();
 
-		DrawCircleLines((int)GetMouseX(), (int)GetMouseY(), 40, BLACK);
-
 		EndDrawing();
 	}
 	CloseWindow();
