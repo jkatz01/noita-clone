@@ -250,7 +250,6 @@ public:
         
         IntVector end_pos = MoveVelocity(pos, p->velocity);
         if (!(end_pos.x == pos.x && end_pos.y == pos.y)) {
-            DrawLine(pos.x*2 + 1, pos.y*2 + 1, end_pos.x*2 + 1, end_pos.y*2 + 1, p->colour);
             QueueUpdateSwapParticles(pos, end_pos);
         }
     }

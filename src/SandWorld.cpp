@@ -13,6 +13,7 @@ public:
 	int screen_size		 = 800;
 	int scaled_size		 = screen_size / tile_size;
 	int tile_width		 = 1;
+	int tile_height      = tile_width;
 	int scaled_tile_size = scaled_size / tile_width;
 
 	int seed = 7000;
@@ -28,17 +29,27 @@ public:
 		screen_size = _screen_size;
 		scaled_size = screen_size / tile_size;
 		tile_width = _tile_width;
+		tile_height = tile_width;
 		scaled_tile_size = scaled_size / tile_width;
 	}
 
 	//TODO: 
-	IntVector CursorToWorld(IntVector pos) {
-		// Mouse position to position in world grid
-		IntVector new_pos = {pos.x / scaled_size, pos.y / scaled_size};
+	IntVector CursorToWorld(IntVector screen_pos) {
+		// Screen mouse position -> Grid scaled mouse position
+		IntVector new_pos = { screen_pos.x / scaled_tile_size, screen_pos.y / scaled_tile_size };
 		return new_pos;
 	}
-	void CursorTotile() {
-		// Mouse position to tile and position in tile
+	IntVector CursorToTile(IntVector grid_pos) {
+		// Grid scaled mouse position -> tile position
+		grid_pos.x /= tile_size;
+		grid_pos.y /= tile_size;
+		return grid_pos;
+	}
+	IntVector CursorToInnerPosition(IntVector grid_pos, IntVector tile_pos) {
+		//Grid scaled mouse position + Tile Position -> Mouse position inside tile
+		int x = grid_pos.x - (tile_pos.x * tile_size);
+		int y = grid_pos.y - (tile_pos.y * tile_size);
+		return {x, y};
 	}
 	void draw() {
 		// Draw material at mouse position
@@ -46,9 +57,9 @@ public:
 
 	void MakeMultiTileWorld() {
 		srand(seed);
-		world_tiles.reserve(tile_width);
-		for (int i = 0; i < tile_width; i++) {
-			SandTile *t = new SandTile(tile_size, { i, i / tile_width });
+		world_tiles.reserve(tile_width * tile_height);
+		for (int i = 0; i < tile_width * tile_height; i++) {
+			SandTile *t = new SandTile(tile_size, { i % tile_width , i / tile_width });
 			world_tiles.push_back(t);
 			world_tiles.back()->AddMaterialSquare( { 90, 90 }, 30, SAND);
 		}
@@ -70,10 +81,15 @@ public:
 						scaled_tile_size, scaled_tile_size, (tile->grid[tile->index(i, j)].colour) );
 				}
 			}
-			DrawRectangle(
+		}
+	}
+
+	void DrawTileBoundaries() {
+		for (SandTile* tile : world_tiles) {
+			DrawRectangleLines(
 				(tile->position.x * tile_size) * scaled_tile_size,
 				(tile->position.y * tile_size) * scaled_tile_size,
-				scaled_tile_size, scaled_size, RED);
+				tile_size * scaled_tile_size, tile_size * scaled_tile_size, RED);
 		}
 	}
 
@@ -104,6 +120,7 @@ public:
 		//DrawOneTileWorld();
 		UpdateMultiTileWorld();
 		DrawMultiTileWorld();
+		DrawTileBoundaries();
 
 		DrawFps();
 		DrawInfoStuff(BLACK);
@@ -115,8 +132,17 @@ public:
 		DrawText(fps_msg, 600, 50, 20, BLACK);
 	}
 
+	SandTile* GetTileFromPos(IntVector tile_pos) {
+		int tile_index = tile_pos.x % tile_width + tile_pos.y * tile_width;
+		if (world_tiles[tile_index] != nullptr) {
+			return world_tiles[tile_index];
+		}
+		return nullptr;
+	}
+
 	void DrawInfoStuff(Color col) {
 		IntVector scaled_pos = CursorToWorld({ GetMouseX(), GetMouseY() });
+		IntVector tile_pos = CursorToTile(scaled_pos);
 
 		char mouse_pos[100];
 		snprintf(mouse_pos, 100, "X: %d, Y: %d", GetMouseX(), GetMouseY());
@@ -126,8 +152,8 @@ public:
 		snprintf(mouse_pos_s, 100, "X: %d, Y: %d", scaled_pos.x, scaled_pos.y);
 		DrawText(mouse_pos_s, 50, 80, 20, col);
 
-		char tile[10];
-		snprintf(tile, 10, "Tile: %d", 1);
+		char tile[20];
+		snprintf(tile, 20, "Tile: %d, %d", tile_pos.x, tile_pos.y);
 		DrawText(tile, 50, 110, 20, col);
 
 		char brush[10];
@@ -139,6 +165,10 @@ public:
 
 	void AddParticles() {
 		IntVector scaled_pos = CursorToWorld({ GetMouseX(), GetMouseY() });
+		IntVector tile_pos = CursorToTile(scaled_pos);
+		IntVector inner_pos = CursorToInnerPosition(scaled_pos, tile_pos);
+
+		SandTile *tile = GetTileFromPos(tile_pos);
 
 		if (IsKeyPressed(KEY_ONE)) {
 			brush_choice = SAND;
@@ -154,10 +184,10 @@ public:
 		}
 
 		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-			first_tile->AddMaterialCircle(scaled_pos, brush_size, brush_choice);
+			tile->AddMaterialCircle(inner_pos, brush_size, brush_choice);
 		}
 		else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
-			first_tile->DeleteMaterialCircle(scaled_pos, brush_size);
+			tile->DeleteMaterialCircle(inner_pos, brush_size);
 		}
 	}
 };
