@@ -22,8 +22,9 @@ public:
     Particle* grid = nullptr;
     std::vector<ParticleUpdate> updates; 
 
-    SandTile(int _size) {
+    SandTile(int _size, IntVector _position) {
         size = _size;
+        position = _position;
         if (size < 10) size = 10;
         int g_size = size * size;
 

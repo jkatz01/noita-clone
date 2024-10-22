@@ -7,18 +7,29 @@
 
 class SandWorld {
 public:
-	// Currently the world is just one chunk
+	// Currently the world is just one tile
 
-	const int chunk_size = 400; // must match the SandTile size
-	const int screen_size = 800;
-	const int scaled_size = screen_size / chunk_size;
+	int tile_size		 = 100; // must match the SandTile size
+	int screen_size		 = 800;
+	int scaled_size		 = screen_size / tile_size;
+	int tile_width		 = 1;
+	int scaled_tile_size = scaled_size / tile_width;
 
 	int seed = 7000;
 
 	ParticleType brush_choice = SAND;
 	int			 brush_size = 20;
 
-	SandTile* first_chunk = nullptr;
+	std::vector<SandTile*> world_tiles;
+	SandTile* first_tile = nullptr;
+
+	SandWorld(int _tile_size, int _screen_size, int _tile_width) {
+		tile_size = _tile_size;
+		screen_size = _screen_size;
+		scaled_size = screen_size / tile_size;
+		tile_width = _tile_width;
+		scaled_tile_size = scaled_size / tile_width;
+	}
 
 	//TODO: 
 	IntVector CursorToWorld(IntVector pos) {
@@ -26,28 +37,61 @@ public:
 		IntVector new_pos = {pos.x / scaled_size, pos.y / scaled_size};
 		return new_pos;
 	}
-	void CursorToChunk() {
+	void CursorTotile() {
 		// Mouse position to tile and position in tile
 	}
 	void draw() {
 		// Draw material at mouse position
 	}
 
+	void MakeMultiTileWorld() {
+		srand(seed);
+		world_tiles.reserve(tile_width);
+		for (int i = 0; i < tile_width; i++) {
+			SandTile *t = new SandTile(tile_size, { i, i / tile_width });
+			world_tiles.push_back(t);
+			world_tiles.back()->AddMaterialSquare( { 90, 90 }, 30, SAND);
+		}
+	}
+
+	void UpdateMultiTileWorld() {
+		for (SandTile* tile : world_tiles) {
+			tile->IterateTileAlternate();
+		}
+	}
+
+	void DrawMultiTileWorld() {
+		for (SandTile* tile : world_tiles) {
+			for (int i = 0; i < tile_size; i++) {
+				for (int j = 0; j < tile_size; j++) {
+					DrawRectangle(
+						(tile->position.x * tile_size + i) * scaled_tile_size,
+						(tile->position.y * tile_size + j) * scaled_tile_size,
+						scaled_tile_size, scaled_tile_size, (tile->grid[tile->index(i, j)].colour) );
+				}
+			}
+			DrawRectangle(
+				(tile->position.x * tile_size) * scaled_tile_size,
+				(tile->position.y * tile_size) * scaled_tile_size,
+				scaled_tile_size, scaled_size, RED);
+		}
+	}
+
 	void MakeOneTileWorld() {
 		srand(seed);
-		first_chunk = new SandTile(chunk_size);
-		first_chunk->AddMaterialSquare(IntVector {90, 90}, 30, SAND);
+		first_tile = new SandTile(tile_size, {0, 0});
+		first_tile->AddMaterialSquare( {90, 90}, 30, SAND);
 	}
 
 	void UpdateOneTileWorld() {
-		first_chunk->IterateTileAlternate();
+		first_tile->IterateTileAlternate();
 	}
 
 	void DrawOneTileWorld() {
-		for (int i = 0; i < chunk_size; i++) {
-			for (int j = 0; j < chunk_size; j++) {
+		for (int i = 0; i < tile_size; i++) {
+			for (int j = 0; j < tile_size; j++) {
 				DrawRectangle(i * scaled_size, j * scaled_size, scaled_size, scaled_size, 
-								(first_chunk->grid[first_chunk->index(i, j)].colour));
+								(first_tile->grid[first_tile->index(i, j)].colour));
 			}
 		}
 	}
@@ -55,8 +99,12 @@ public:
 
 	void executeFrame() {
 		AddParticles();
-		UpdateOneTileWorld();
-		DrawOneTileWorld();
+
+		//UpdateOneTileWorld();
+		//DrawOneTileWorld();
+		UpdateMultiTileWorld();
+		DrawMultiTileWorld();
+
 		DrawFps();
 		DrawInfoStuff(BLACK);
 	}
@@ -106,10 +154,10 @@ public:
 		}
 
 		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-			first_chunk->AddMaterialCircle(scaled_pos, brush_size, brush_choice);
+			first_tile->AddMaterialCircle(scaled_pos, brush_size, brush_choice);
 		}
 		else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
-			first_chunk->DeleteMaterialCircle(scaled_pos, brush_size);
+			first_tile->DeleteMaterialCircle(scaled_pos, brush_size);
 		}
 	}
 };

@@ -5,12 +5,12 @@
 SandWorld* world;
 
 int main() {
-	world = new SandWorld();
+	world = new SandWorld(100, 800, 4);
 
 	InitWindow(world->screen_size, world->screen_size, "World");
 	//SetTargetFPS(60);
 	
-	world->MakeOneTileWorld();
+	world->MakeMultiTileWorld();
 
 	while (!WindowShouldClose()) {
 		BeginDrawing();
