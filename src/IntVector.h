@@ -25,12 +25,6 @@ public:
 		return std::sqrt(dx * dx + dy * dy);
 	}
 
-	IntVector difference(IntVector vec2) {
-		int dx, dy;
-		dx = x - vec2.x;
-		dy = y - vec2.y;
-		return {dx, dy};
-	}
 };
 
 

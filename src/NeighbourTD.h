@@ -18,6 +18,7 @@ enum NeighbourTD {
 NeighbourTD NeighbourIndexFromTilePosition(IntVector tile_origin, IntVector tile_n);
 NeighbourTD NeighbourFromPosition(IntVector pos, int tile_size);
 IntVector   TranslateParticleToNeighbour(IntVector pos, int tile_size); // Translates out of bounds position from self to appropriate position in neighbouring tile
+IntVector   VecDifference(IntVector vec1, IntVector vec2);
 
 
 

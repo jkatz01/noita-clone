@@ -8,6 +8,10 @@ inline int NTDsignum(int x) {
     return (x > 0) - (x < 0);
 }
 
+inline int NTDsignumInverted(int x) {
+    return (x < 0) - (x > 0);
+}
+
 NeighbourTD NeighbourIndexFromTilePosition(IntVector tile_origin, IntVector tile_n) {
     if (tile_n == tile_origin) {
         return ND_MYSELF;
@@ -44,5 +48,16 @@ IntVector TranslateParticleToNeighbour(IntVector pos, int tile_size) {
     int my_x = (tile_size + (pos.x * (is_x_neg))) % tile_size;
     int my_y = (tile_size + (pos.y * (is_y_neg))) % tile_size;
     return {my_x, my_y};
+}
+
+IntVector VecDifference(IntVector vec1, IntVector vec2) {
+    int dx, dy;
+    dx = (vec1.x - vec2.x);
+    dx = (abs(dx) /*- 1*/) * NTDsignumInverted(dx);
+
+    dy = (vec1.y - vec2.y);
+    dy = (abs(dy)/* - 1*/) * NTDsignumInverted(dy);
+
+    return { dx, dy };
 }
 

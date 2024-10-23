@@ -19,6 +19,7 @@ struct ParticleUpdate {
 struct ParticleUpdateN_Move { 
     Particle  p;
     IntVector dest;
+    IntVector diff;
 };
 
 class SandTile {
@@ -295,17 +296,34 @@ public:
         NeighbourTD n_moved_to = ND_MYSELF;
         IntVector end_pos = MoveVelocity(pos, p->velocity, &n_moved_to);
 
-        //IntVector diff = pos.difference(end_pos);
+        IntVector diff = VecDifference(pos, end_pos);
 
         if (n_moved_to == ND_MYSELF) {
             if (!(end_pos == pos)) {
                 //DrawStupidLines(pos, end_pos);
-                QueueUpdateSwapParticles(pos, end_pos); //getting -1, -1 ????
+                QueueUpdateSwapParticles(pos, end_pos); 
             }
         }
         else {
             end_pos = TranslateParticleToNeighbour(end_pos, tile_size);
-            QueueNeighbourMovementParticle(end_pos, *p, n_moved_to);
+            QueueNeighbourMovementParticle(end_pos, *p, n_moved_to, diff);
+            SwapParticle(pos, *tile_neighbours[n_moved_to]->GetParticleAt(end_pos));
+        }
+    }
+
+    void MoveInFrameByDifference(IntVector pos, Particle* p, IntVector diff) {
+        NeighbourTD n_moved_to = ND_MYSELF;
+        IntVector end_pos = MoveVelocity(pos, {p->velocity.x - diff.x, p->velocity.y - diff.y}, &n_moved_to);
+
+
+        if (n_moved_to == ND_MYSELF) {
+            if (!(end_pos == pos)) {
+                SwapParticles(pos, end_pos);
+            }
+        }
+        else {
+            end_pos = TranslateParticleToNeighbour(end_pos, tile_size);
+            QueueNeighbourMovementParticle(end_pos, *p, n_moved_to, diff);
             SwapParticle(pos, *tile_neighbours[n_moved_to]->GetParticleAt(end_pos));
         }
     }
@@ -364,11 +382,11 @@ public:
         updates.push_back({ v_src, v_dst });
     }
 
-    void QueueNeighbourMovementParticle(IntVector v_src, Particle p, NeighbourTD n_index) {
+    void QueueNeighbourMovementParticle(IntVector v_src, Particle p, NeighbourTD n_index, IntVector diff) {
         if (!NeighbourExists(n_index)) {
             return;
         }
-        tile_neighbours[n_index]->updates_to_neighours.push_back({p, v_src});
+        tile_neighbours[n_index]->updates_to_neighours.push_back({p, v_src, diff});
     }
     
     // swaps source with destination
@@ -385,19 +403,6 @@ public:
 
 
     void IterateTileAlternate() {
-        // Apply moves from neighbours from previous frames
-        // these are events that should have occured last frame
-        for (ParticleUpdateN_Move& pnu : updates_to_neighours) {
-            SwapParticle(pnu.dest, pnu.p);
-            // need to finish the MoveTowards from previous frame
-            // it already moved x steps in the previous one, so need to remove those
-            // and then do the movement right here
-            // need to know the distance from its last position to the current one
-            // we can know this from the difference between pos and end_pos
-            //MoveParticleInFrame(pnu.dest, GetParticleAt(pnu.dest));
-        }
-        updates_to_neighours.clear();
-
         // Update every particle based on old grid
         for (int i = 0; i < tile_size; i++) {
             if ((i & 1) == 0) {
@@ -411,6 +416,14 @@ public:
                 }
             }
         }
+
+        // Apply moves from neighbours from previous frames
+        // these are events that should have occured last frame
+        for (ParticleUpdateN_Move& pnu : updates_to_neighours) {
+            SwapParticle(pnu.dest, pnu.p);
+            MoveInFrameByDifference(pnu.dest, GetParticleAt(pnu.dest), pnu.diff);
+        }
+        updates_to_neighours.clear();
 
         // Update grid
         for (ParticleUpdate& pu : updates) {
