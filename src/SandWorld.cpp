@@ -144,7 +144,7 @@ public:
 
 		UpdateMultiTileWorld();
 		DrawMultiTileWorld();
-		DrawTileBoundaries();
+		//DrawTileBoundaries();
 
 		DrawFps();
 		DrawInfoStuff(BLACK);

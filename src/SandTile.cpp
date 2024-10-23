@@ -158,26 +158,24 @@ public:
 
 
     // Returns {-1, -1} if false
-    IntVector ReplacePositionWithNeighbour(IntVector pos, Particle *p, NeighbourTD* neighbour_moved_to) {
+    NeighbourTD ReplacePositionWithNeighbourTile(IntVector pos, Particle* p) {
         NeighbourTD n = NeighbourFromPosition(pos, tile_size);
 
-        *neighbour_moved_to = ND_MYSELF; // Fail by default
 
         if (!NeighbourExists(n)) {
-            return { -1, -1 };
+            return ND_MYSELF; //if no neighbour the MoveVelocity function deals with it
         }
         if (n != ND_MYSELF) {
             // if we can replace the particle at the neighbour
             IntVector pos_in_neighbour = TranslateParticleToNeighbour(pos, tile_size);
-            
 
             if (tile_neighbours[n]->CanReplaceParticleN(p, pos_in_neighbour)) {
-                *neighbour_moved_to = n;
-                return pos_in_neighbour;
+                return n;
             }
         }
-        return {-1, -1};
+        return ND_MYSELF;
     }
+
 
     // Returns translated position if moved to a neighbour
     IntVector MoveVelocity(IntVector pos, Vector2 vel, NeighbourTD *neighbour_moved_to) {
@@ -203,9 +201,10 @@ public:
                 err -= dy;
                 pos.x += sx;
 
-                IntVector neighbour_pos = ReplacePositionWithNeighbour(pos, initial_p, neighbour_moved_to);
-                if (*neighbour_moved_to != ND_MYSELF) {
-                    return neighbour_pos;
+                // if not in bounds
+                *neighbour_moved_to = ReplacePositionWithNeighbourTile(pos, initial_p);
+                if (*neighbour_moved_to != ND_MYSELF) { 
+                    return pos;
                 }
 
                 if (!CanReplaceParticle(ipos, pos)) {
@@ -218,9 +217,9 @@ public:
                 err += dx;
                 pos.y += sy;
 
-                IntVector neighbour_pos = ReplacePositionWithNeighbour(pos, initial_p, neighbour_moved_to);
+                *neighbour_moved_to = ReplacePositionWithNeighbourTile(pos, initial_p);
                 if (*neighbour_moved_to != ND_MYSELF) {
-                    return neighbour_pos;
+                    return pos;
                 }
 
                 if (!CanReplaceParticle(ipos, pos)) {
@@ -291,6 +290,49 @@ public:
         return (abs(p->velocity.x) < value && abs(p->velocity.y) < value);
     }
 
+
+    void MoveAndQueueParticle(IntVector pos, Particle *p) {
+        NeighbourTD n_moved_to = ND_MYSELF;
+        IntVector end_pos = MoveVelocity(pos, p->velocity, &n_moved_to);
+
+        //IntVector diff = pos.difference(end_pos);
+
+        if (n_moved_to == ND_MYSELF) {
+            if (!(end_pos == pos)) {
+                //DrawStupidLines(pos, end_pos);
+                QueueUpdateSwapParticles(pos, end_pos); //getting -1, -1 ????
+            }
+        }
+        else {
+            end_pos = TranslateParticleToNeighbour(end_pos, tile_size);
+            QueueNeighbourMovementParticle(end_pos, *p, n_moved_to);
+            SwapParticle(pos, *tile_neighbours[n_moved_to]->GetParticleAt(end_pos));
+        }
+    }
+
+
+    void GetNewParticleVelocity(IntVector pos, Particle* p) {
+        const std::vector<Vector2>* mv = GetMovementDirections(p->type);
+        for (Vector2 dir : *mv) {
+            IntVector new_pos = { pos.x + (int)dir.x, pos.y + (int)dir.y };
+
+            if (InBounds(new_pos) && CanReplaceParticle(pos, new_pos)) {
+                p->velocity = { dir.x, dir.y };
+                return;
+            }
+            else {
+                NeighbourTD n_index = NeighbourFromPosition(new_pos, tile_size);
+                if (n_index != ND_MYSELF && NeighbourExists(n_index)) {
+                    IntVector pos_in_neighbour = TranslateParticleToNeighbour(new_pos, tile_size);
+                    if (tile_neighbours[n_index]->CanReplaceParticleN(p, pos_in_neighbour)) {
+                        p->velocity = { dir.x, dir.y };
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
     void UpdateParticle(IntVector pos) {
         Particle* p = GetParticleAt(pos);
 
@@ -301,46 +343,13 @@ public:
         if (!AbsVelocityLessThan(1, p)) {
             ApplyDrag(p);
         }
-        else { // get new velocity
-            const std::vector<Vector2>* mv = GetMovementDirections(p->type);
-            for (Vector2 dir : *mv) {
-                IntVector new_pos = { pos.x + (int)dir.x, pos.y + (int)dir.y };
-
-                if (InBounds(new_pos) && CanReplaceParticle(pos, new_pos)) {
-                    p->velocity = { dir.x, dir.y };
-                    break;
-                }
-                else {
-                    NeighbourTD n_index = NeighbourFromPosition(new_pos, tile_size);
-                    if (n_index != ND_MYSELF && NeighbourExists(n_index)) {
-                        IntVector pos_in_neighbour = TranslateParticleToNeighbour(new_pos, tile_size);
-                        bool can_replace = tile_neighbours[n_index]->CanReplaceParticleN(p, pos_in_neighbour);
-                        if (can_replace) {
-                            p->velocity = { dir.x, dir.y };
-                            break;
-                        }
-                    }
-                }
-            }
+        else { 
+            GetNewParticleVelocity(pos, p);
         }
 
         ApplyGravity(p);
 
-        NeighbourTD n_moved_to = ND_MYSELF;
-        IntVector end_pos = MoveVelocity(pos, p->velocity, &n_moved_to);
-
-        if (n_moved_to == ND_MYSELF) {
-            if (!(end_pos == pos)) {
-                DrawStupidLines(pos, end_pos);
-                QueueUpdateSwapParticles(pos, end_pos);
-            }
-        }
-        else {
-            // add to vector of NeighbourUpdates that applies all moves beforehand in neighbour 
-            // replace current pos with the particle from end_pos
-            QueueNeighbourMovementParticle(end_pos, *p, n_moved_to);
-            SwapParticle(*tile_neighbours[n_moved_to]->GetParticleAt(end_pos), pos);
-        }
+        MoveAndQueueParticle(pos, p);
         
     }
 
@@ -361,7 +370,7 @@ public:
         }
         tile_neighbours[n_index]->updates_to_neighours.push_back({p, v_src});
     }
-
+    
     // swaps source with destination
     void SwapParticles(IntVector src, IntVector dst) {
         Particle temp = *GetParticleAt(src);
@@ -370,21 +379,28 @@ public:
     }
 
     // swaps destination for any particle
-    void SwapParticle(Particle new_p, IntVector dst) {
+    void SwapParticle(IntVector dst, Particle new_p) {
         grid[index(dst)] = new_p;
     }
 
 
     void IterateTileAlternate() {
         // Apply moves from neighbours from previous frames
+        // these are events that should have occured last frame
         for (ParticleUpdateN_Move& pnu : updates_to_neighours) {
-            SwapParticle(pnu.p, pnu.dest);
+            SwapParticle(pnu.dest, pnu.p);
+            // need to finish the MoveTowards from previous frame
+            // it already moved x steps in the previous one, so need to remove those
+            // and then do the movement right here
+            // need to know the distance from its last position to the current one
+            // we can know this from the difference between pos and end_pos
+            //MoveParticleInFrame(pnu.dest, GetParticleAt(pnu.dest));
         }
         updates_to_neighours.clear();
 
         // Update every particle based on old grid
         for (int i = 0; i < tile_size; i++) {
-            if (i % 2 == 0) {
+            if ((i & 1) == 0) {
                 for (int j = 0; j < tile_size; j++) {
                     UpdateParticle(IntVector{ j, i });
                 }
@@ -395,9 +411,8 @@ public:
                 }
             }
         }
+
         // Update grid
-        // TODO: -----------------------------------
-        // remove moves where destination has been filled
         for (ParticleUpdate& pu : updates) {
             SwapParticles(pu.source, pu.dest);
         }

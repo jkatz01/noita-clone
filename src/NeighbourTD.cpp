@@ -4,7 +4,7 @@ inline bool NTDInBounds(IntVector pos, int tile_size) {
     return ((pos.x >= 0 && pos.x < tile_size) && (pos.y >= 0 && pos.y < tile_size));
 }
 
-inline int NTDsignum(float x) {
+inline int NTDsignum(int x) {
     return (x > 0) - (x < 0);
 }
 
