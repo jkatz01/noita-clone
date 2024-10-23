@@ -331,6 +331,7 @@ public:
 
         if (n_moved_to == ND_MYSELF) {
             if (!(end_pos == pos)) {
+                DrawStupidLines(pos, end_pos);
                 QueueUpdateSwapParticles(pos, end_pos);
             }
         }
@@ -341,6 +342,13 @@ public:
             SwapParticle(*tile_neighbours[n_moved_to]->GetParticleAt(end_pos), pos);
         }
         
+    }
+
+    void DrawStupidLines(IntVector pos, IntVector end_pos) {
+        int duh = 800 / 100 / 4;
+        IntVector guh = { (position.x * tile_size * duh), (position.y * tile_size * duh) };
+
+        DrawLine(guh.x + pos.x * duh + 1, guh.y + pos.y * duh + 1, guh.x + end_pos.x * duh + 1, guh.y + end_pos.y * duh + 1, WHITE);
     }
 
     void QueueUpdateSwapParticles(IntVector v_src, IntVector v_dst) {
@@ -372,6 +380,7 @@ public:
         for (ParticleUpdateN_Move& pnu : updates_to_neighours) {
             SwapParticle(pnu.p, pnu.dest);
         }
+        updates_to_neighours.clear();
 
         // Update every particle based on old grid
         for (int i = 0; i < tile_size; i++) {

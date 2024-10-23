@@ -6,7 +6,7 @@
 
 #define PARTICLE_TYPE_COUNT 6
 
-#define WATER_BLUE       CLITERAL(Color){ 0, 121, 241, 150 } 
+#define WATER_BLUE       CLITERAL(Color){ 50, 171, 251, 150 } 
 #define WATER_BLUE_2     CLITERAL(Color){ 0, 101, 221, 130 } 
 
 const float gravity = 0.2f;

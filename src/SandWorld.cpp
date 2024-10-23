@@ -142,8 +142,6 @@ public:
 	void executeFrame() {
 		AddParticles();
 
-		//UpdateOneTileWorld();
-		//DrawOneTileWorld();
 		UpdateMultiTileWorld();
 		DrawMultiTileWorld();
 		DrawTileBoundaries();
