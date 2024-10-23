@@ -27,6 +27,8 @@ public:
 	std::vector<SandTile*> world_tiles; //fixed world size for now, otherwise the indexing can get wrong
 	SandTile* first_tile = nullptr;
 
+	std::vector<Color*> tile_color_buffers;
+
 	SandWorld(int _tile_size, int _screen_size, int _tile_width) {
 		tile_size = _tile_size;
 		screen_size = _screen_size;
@@ -37,6 +39,7 @@ public:
 		tile_number = tile_width * tile_height;
 
 		world_tiles.reserve(tile_number);
+		tile_color_buffers.reserve(tile_number);
 	}
 
 	bool MouseInBounds(IntVector pos) {
@@ -121,8 +124,14 @@ public:
 
 	// Only call once
 
-	Image MakeTileImage(SandTile* tile) {
-		Color* buffer = new Color[tile_size * tile_size]; //need new allocation every time to use ImageResize
+	void AllocateImageTileBuffers() {
+		for (int i = 0; i < tile_number; i++) {
+			Color* c = new Color[tile_size * tile_size];
+			tile_color_buffers.push_back(c);
+		}
+	}
+
+	Image MakeTileImage(SandTile* tile, Color* buffer) {
 		for (int i = 0; i < tile_size * tile_size; i++) {
 			buffer[i] = tile->grid[i].colour;
 		}
@@ -137,13 +146,12 @@ public:
 		textures.clear();
 
 		for (int i = 0; i < tile_number; i++) {
-			Image img = MakeTileImage(world_tiles[i]);
-			ImageResize(&img, tile_size * scaled_tile_size, tile_size * scaled_tile_size); //allocates its own memory and frees previous data
+			Image img = MakeTileImage(world_tiles[i], tile_color_buffers[i]);
 			textures.push_back(LoadTextureFromImage(img));
 			IntVector pos = VectorFromIndex(i);
-			DrawTexture(textures.back(), (world_tiles[i]->position.x * tile_size) * scaled_tile_size,
-							 (world_tiles[i]->position.y * tile_size) * scaled_tile_size, WHITE);
-			UnloadImage(img);
+			DrawTextureEx(textures.back(), Vector2{(float)(world_tiles[i]->position.x * tile_size) * scaled_tile_size,
+				(float)(world_tiles[i]->position.y * tile_size) * scaled_tile_size},
+				0, 2, WHITE);
 		}
 		
 	}

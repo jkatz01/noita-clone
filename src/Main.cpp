@@ -11,6 +11,7 @@ int main() {
 	//SetTargetFPS(10);
 
 	world->MakeMultiTileWorld();
+	world->AllocateImageTileBuffers();
 
 	while (!WindowShouldClose()) {
 		BeginDrawing();
