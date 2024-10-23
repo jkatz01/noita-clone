@@ -169,10 +169,10 @@ public:
         if (n != ND_MYSELF) {
             // if we can replace the particle at the neighbour
             IntVector pos_in_neighbour = TranslateParticleToNeighbour(pos, tile_size);
-            NeighbourTD n_index = NeighbourFromPosition(pos_in_neighbour, tile_size);
+            
 
-            if (tile_neighbours[n_index]->CanReplaceParticleN(p, pos_in_neighbour)) {
-                *neighbour_moved_to = n_index;
+            if (tile_neighbours[n]->CanReplaceParticleN(p, pos_in_neighbour)) {
+                *neighbour_moved_to = n;
                 return pos_in_neighbour;
             }
         }
@@ -312,7 +312,7 @@ public:
                 }
                 else {
                     NeighbourTD n_index = NeighbourFromPosition(new_pos, tile_size);
-                    if (NeighbourExists(n_index)) {
+                    if (n_index != ND_MYSELF && NeighbourExists(n_index)) {
                         IntVector pos_in_neighbour = TranslateParticleToNeighbour(new_pos, tile_size);
                         bool can_replace = tile_neighbours[n_index]->CanReplaceParticleN(p, pos_in_neighbour);
                         if (can_replace) {
@@ -368,8 +368,12 @@ public:
 
 
     void IterateTileAlternate() {
+        // Apply moves from neighbours from previous frames
+        for (ParticleUpdateN_Move& pnu : updates_to_neighours) {
+            SwapParticle(pnu.p, pnu.dest);
+        }
+
         // Update every particle based on old grid
-        
         for (int i = 0; i < tile_size; i++) {
             if (i % 2 == 0) {
                 for (int j = 0; j < tile_size; j++) {

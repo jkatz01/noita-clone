@@ -72,6 +72,23 @@ public:
 			world_tiles.back()->AddMaterialSquare( { 90, 90 }, 30, SAND);
 		}
 		// update each tile with all its neighbours
+		// maybe just do this naively?
+		MultiWorldAddNeighbours();
+	}
+
+	void MultiWorldAddNeighbours() {
+		for (int i = 0; i < tile_width * tile_height; i++) {
+			int min_range = i - tile_width - 1;
+			int max_range = i + tile_width + 1;
+			if (min_range < 0) min_range = 0; 
+			if (max_range >= tile_width * tile_height) max_range = tile_width * tile_height - 1;
+			for (int j = min_range; j <= max_range; j++) {
+				NeighbourTD n_index = NeighbourIndexFromTilePosition(world_tiles[i]->position, world_tiles[j]->position);
+				if (n_index != ND_MYSELF) {
+					world_tiles[i]->tile_neighbours[n_index] = world_tiles[j];
+				}
+			}
+		}
 	}
 
 	void UpdateMultiTileWorld() {
