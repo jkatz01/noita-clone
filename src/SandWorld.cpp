@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <array>
 #include "raylib.h"
 #include "SandTile.cpp"
 #include "SandData.h"
@@ -16,6 +17,7 @@ public:
 	int tile_width		 = 1;
 	int tile_height      = tile_width;
 	int scaled_tile_size = scaled_size / tile_width;
+	int tile_number		 = tile_width * tile_height;
 
 	int seed = 7000;
 
@@ -32,13 +34,14 @@ public:
 		tile_width = _tile_width;
 		tile_height = tile_width;
 		scaled_tile_size = scaled_size / tile_width;
+		tile_number = tile_width * tile_height;
+
+		world_tiles.reserve(tile_number);
 	}
 
 	bool MouseInBounds(IntVector pos) {
 		return ((pos.x >= 0 && pos.x < screen_size) && (pos.y >= 0 && pos.y < screen_size));
 	}
-
-	//TODO: 
 	IntVector CursorToWorld(IntVector screen_pos) {
 		// Screen mouse position -> Grid scaled mouse position
 		if (!MouseInBounds(screen_pos)) {
@@ -60,28 +63,30 @@ public:
 		return {x, y};
 	}
 	void draw() {
-		// Draw material at mouse position
+		//Draw material at mouse position
+	}
+
+	IntVector VectorFromIndex(int index) {
+		return {index % tile_size, index / tile_size };
 	}
 
 	void MakeMultiTileWorld() {
 		srand(seed);
-		world_tiles.reserve(tile_width * tile_height);
-		for (int i = 0; i < tile_width * tile_height; i++) {
+		for (int i = 0; i < tile_number; i++) {
 			SandTile *t = new SandTile(tile_size, { i % tile_width , i / tile_width });
 			world_tiles.push_back(t);
 			world_tiles.back()->AddMaterialSquare( { 90, 90 }, 30, SAND);
 		}
-		// update each tile with all its neighbours
-		// maybe just do this naively?
+		
 		MultiWorldAddNeighbours();
 	}
 
 	void MultiWorldAddNeighbours() {
-		for (int i = 0; i < tile_width * tile_height; i++) {
+		for (int i = 0; i < tile_number; i++) {
 			int min_range = i - tile_width - 1;
 			int max_range = i + tile_width + 1;
 			if (min_range < 0) min_range = 0; 
-			if (max_range >= tile_width * tile_height) max_range = tile_width * tile_height - 1;
+			if (max_range >= tile_number) max_range = tile_number - 1;
 			for (int j = min_range; j <= max_range; j++) {
 				NeighbourTD n_index = NeighbourIndexFromTilePosition(world_tiles[i]->position, world_tiles[j]->position);
 				if (n_index != ND_MYSELF) {
@@ -109,6 +114,40 @@ public:
 			}
 		}
 	}
+
+	// get all buffers
+	// make images from those buffers
+	// render all images as textures
+
+	// Only call once
+
+	Image MakeTileImage(SandTile* tile) {
+		Color* buffer = new Color[tile_size * tile_size]; //need new allocation every time to use ImageResize
+		for (int i = 0; i < tile_size * tile_size; i++) {
+			buffer[i] = tile->grid[i].colour;
+		}
+		return { buffer, tile_size , tile_size , 1, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8 };
+	}
+
+	void DrawTileImages() {
+		static std::vector<Texture> textures;
+		for (Texture& t : textures) {
+			UnloadTexture(t);
+		}
+		textures.clear();
+
+		for (int i = 0; i < tile_number; i++) {
+			Image img = MakeTileImage(world_tiles[i]);
+			ImageResize(&img, tile_size * scaled_tile_size, tile_size * scaled_tile_size); //allocates its own memory and frees previous data
+			textures.push_back(LoadTextureFromImage(img));
+			IntVector pos = VectorFromIndex(i);
+			DrawTexture(textures.back(), (world_tiles[i]->position.x * tile_size) * scaled_tile_size,
+							 (world_tiles[i]->position.y * tile_size) * scaled_tile_size, WHITE);
+			UnloadImage(img);
+		}
+		
+	}
+
 
 	void DrawTileBoundaries() {
 		for (SandTile* tile : world_tiles) {
@@ -143,7 +182,8 @@ public:
 		AddParticles();
 
 		UpdateMultiTileWorld();
-		DrawMultiTileWorld();
+		DrawTileImages();
+		//DrawMultiTileWorld();
 		DrawTileBoundaries();
 
 		DrawFps();
