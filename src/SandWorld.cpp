@@ -151,7 +151,7 @@ public:
 			IntVector pos = VectorFromIndex(i);
 			DrawTextureEx(textures.back(), Vector2{(float)(world_tiles[i]->position.x * tile_size) * scaled_tile_size,
 				(float)(world_tiles[i]->position.y * tile_size) * scaled_tile_size},
-				0, 2, WHITE);
+				0, scaled_tile_size, WHITE);
 		}
 		
 	}
@@ -163,6 +163,12 @@ public:
 				(tile->position.x * tile_size) * scaled_tile_size,
 				(tile->position.y * tile_size) * scaled_tile_size,
 				tile_size * scaled_tile_size, tile_size * scaled_tile_size, RED);
+			if (tile->simulated_cell_count == 0) {
+				DrawRectangle(
+					(tile->position.x * tile_size) * scaled_tile_size,
+					(tile->position.y * tile_size) * scaled_tile_size,
+					tile_size * scaled_tile_size, tile_size * scaled_tile_size, Color{ 0, 200, 0, 100 });
+			}
 		}
 	}
 
@@ -224,13 +230,18 @@ public:
 		snprintf(mouse_pos_s, 100, "X: %d, Y: %d", scaled_pos.x, scaled_pos.y);
 		DrawText(mouse_pos_s, 50, 80, 20, col);
 
-		char tile[20];
-		snprintf(tile, 20, "Tile: %d, %d", tile_pos.x, tile_pos.y);
-		DrawText(tile, 50, 110, 20, col);
+		char tile_num[20];
+		snprintf(tile_num, 20, "Tile: %d, %d", tile_pos.x, tile_pos.y);
+		DrawText(tile_num, 50, 110, 20, col);
 
 		char brush[10];
 		snprintf(brush, 10, param_ref[brush_choice].type_name.c_str(), 1);
 		DrawText(brush, 50, 140, 20, col);
+
+		SandTile* tile = GetTileFromPos(tile_pos);
+		char tile_cell_count[10];
+		snprintf(tile_cell_count, 10, "%d", tile->simulated_cell_count);
+		DrawText(tile_cell_count, 50, 170, 20, col);
 
 		DrawCircleLines((int)GetMouseX(), (int)GetMouseY(), brush_size, col);
 	}

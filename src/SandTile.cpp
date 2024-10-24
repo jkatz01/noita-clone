@@ -22,6 +22,11 @@ struct ParticleUpdateN_Move {
     IntVector diff;
 };
 
+struct ParticleUpdateDraw {
+    IntVector pos;
+    Particle p;
+};
+
 class SandTile {
 public:
     IntVector     position = {0,0};
@@ -30,8 +35,11 @@ public:
     Particle* grid = nullptr;
     std::vector<ParticleUpdate>         updates; 
     std::vector<ParticleUpdateN_Move>   updates_to_neighours;
+    std::vector<ParticleUpdateDraw>     update_draws;
 
     SandTile* tile_neighbours[8] = {nullptr}; // Starts at top middle, goes clockwise
+
+    int simulated_cell_count = 0;
 
     SandTile(int _tile_size, IntVector _position) {
         tile_size = _tile_size;
@@ -53,6 +61,14 @@ public:
             return;
         }
         tile_neighbours[index] = t;
+    }
+
+    inline void simulated_cell_add() {
+        simulated_cell_count++;
+    }
+
+    inline void simulated_cell_remove() {
+        simulated_cell_count--;
     }
 
     int index(IntVector pos) {
@@ -92,17 +108,13 @@ public:
         }
     }
 
+    // I thiink all of these need to be queued
+
     void AddMaterialSquare(IntVector pos, int size, ParticleType m_type) {
         for (int i = pos.x; i < pos.x + size; i++) {
             for (int j = pos.y; j < pos.y + size; j++) {
-                if (InBounds(IntVector {i, j})) {
-                    Particle *p = GetParticleAt(IntVector{ i, j });
-                    if (p->type == EMPTY) {
-                        p->type = m_type;
-                        p->colour = ColorLookup(m_type);
-                    }
-                }
-
+                Particle p = {m_type, {0, 0}, ColorLookup(m_type) };
+                update_draws.push_back({{i, j}, p});
             }
         }
     }
@@ -112,13 +124,8 @@ public:
         for (int i = - size; i < size; i++) {
             for (int j = - size; j < size; j++) {
                 if (i * i + j * j <= size * size) {
-                    if (InBounds({ i + pos.x, j + pos.y })) {
-                        Particle *p = GetParticleAt({ i + pos.x, j + pos.y });
-                        if (p->type == EMPTY) {
-                            p->type = m_type;
-                            p->colour = ColorLookup(m_type);
-                        }
-                    }
+                    Particle p = { m_type, {0, 0}, ColorLookup(m_type) };
+                    update_draws.push_back({ {i + pos.x, j + pos.y}, p });
                 }
             }
         }
@@ -131,7 +138,10 @@ public:
                 if (i * i + j * j <= size * size) {
                     if (InBounds({ i + pos.x, j + pos.y })) {
                         Particle* p = GetParticleAt({ i + pos.x, j + pos.y });
-                        p->type = EMPTY;
+                        if (p->type != EMPTY) {
+                            simulated_cell_remove();
+                        }
+                        p->type = EMPTY; // TAG: @cell-emptied
                         p->colour = ColorLookup(EMPTY);
                     }
                 }
@@ -273,24 +283,13 @@ public:
         return false;
     }
 
-    void ApplyGravity(Particle* p) {
-        if (abs(p->velocity.y) > param_ref[p->type].max_vel) {
-            return;
-        }
-        p->velocity.y += gravity * param_ref[p->type].grav;
-    }
-    void ApplyDrag(Particle* p) {
-        if (abs(p->velocity.y) < 1) {
-            return;
-        }
-        int sx = signum((int)p->velocity.x);
-        p->velocity.x -= sx * param_ref[p->type].drag;
-    }
-
     bool AbsVelocityLessThan(int value, Particle *p) {
         return (abs(p->velocity.x) < value && abs(p->velocity.y) < value);
     }
 
+    bool AbsVelocityMoreEqualThan(int value, Particle* p) {
+        return (abs(p->velocity.x) >= value || abs(p->velocity.y) >= value);
+    }
 
     void MoveAndQueueParticle(IntVector pos, Particle *p) {
         NeighbourTD n_moved_to = ND_MYSELF;
@@ -307,7 +306,7 @@ public:
         else {
             end_pos = TranslateParticleToNeighbour(end_pos, tile_size);
             QueueNeighbourMovementParticle(end_pos, *p, n_moved_to, diff);
-            SwapParticle(pos, *tile_neighbours[n_moved_to]->GetParticleAt(end_pos));
+            InsertParticle(pos, *tile_neighbours[n_moved_to]->GetParticleAt(end_pos));
         }
     }
 
@@ -324,7 +323,7 @@ public:
         else {
             end_pos = TranslateParticleToNeighbour(end_pos, tile_size);
             QueueNeighbourMovementParticle(end_pos, *p, n_moved_to, diff);
-            SwapParticle(pos, *tile_neighbours[n_moved_to]->GetParticleAt(end_pos));
+            InsertParticle(pos, *tile_neighbours[n_moved_to]->GetParticleAt(end_pos));
         }
     }
 
@@ -351,6 +350,21 @@ public:
         }
     }
 
+    void ApplyGravity(Particle* p) {
+        if (abs(p->velocity.y) > param_ref[p->type].max_vel) {
+            return;
+        }
+        p->velocity.y += w_gravity * param_ref[p->type].grav;
+    }
+
+    void ApplyDrag(Particle* p) {
+        if (abs(p->velocity.y) < param_ref[p->type].drag_min) {
+            return;
+        }
+        int sx = signum((int)p->velocity.x);
+        p->velocity.x -= sx * w_drag;
+    }
+
     void UpdateParticle(IntVector pos) {
         Particle* p = GetParticleAt(pos);
 
@@ -358,11 +372,12 @@ public:
             return;
         }
         
-        if (!AbsVelocityLessThan(1, p)) {
-            ApplyDrag(p);
-        }
-        else { 
+            
+        if (AbsVelocityLessThan(1, p)) { 
             GetNewParticleVelocity(pos, p);
+        }
+        else {
+            ApplyDrag(p);
         }
 
         ApplyGravity(p);
@@ -397,12 +412,22 @@ public:
     }
 
     // swaps destination for any particle
-    void SwapParticle(IntVector dst, Particle new_p) {
+    void InsertParticle(IntVector dst, Particle new_p) {
+        // this should be the only way for particles 
+        // to get deleted without a brush
+        if (new_p.type == EMPTY) {
+            simulated_cell_remove();
+        }
+        else {
+            simulated_cell_add();
+        }
         grid[index(dst)] = new_p;
     }
 
 
     void IterateTileAlternate() {
+        
+
         // Update every particle based on old grid
         for (int i = 0; i < tile_size; i++) {
             if ((i & 1) == 0) {
@@ -420,7 +445,7 @@ public:
         // Apply moves from neighbours from previous frames
         // these are events that should have occured last frame
         for (ParticleUpdateN_Move& pnu : updates_to_neighours) {
-            SwapParticle(pnu.dest, pnu.p);
+            InsertParticle(pnu.dest, pnu.p);
             MoveInFrameByDifference(pnu.dest, GetParticleAt(pnu.dest), pnu.diff);
         }
         updates_to_neighours.clear();
@@ -430,5 +455,16 @@ public:
             SwapParticles(pu.source, pu.dest);
         }
         updates.clear();
+
+        for (ParticleUpdateDraw& pud : update_draws) {
+            if (InBounds(pud.pos)) {
+                if (GetParticleAt(pud.pos)->type == EMPTY) {
+                    InsertParticle(pud.pos, pud.p);
+                }
+            }
+        }
+        update_draws.clear();
+
+        
     }
 };

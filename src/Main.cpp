@@ -8,7 +8,8 @@ int main() {
 	world = new SandWorld(100, 800, 4);
 
 	InitWindow(world->screen_size, world->screen_size, "World");
-	//SetTargetFPS(10);
+	SetTraceLogLevel(LOG_WARNING);
+	SetTargetFPS(60);
 
 	world->MakeMultiTileWorld();
 	world->AllocateImageTileBuffers();
