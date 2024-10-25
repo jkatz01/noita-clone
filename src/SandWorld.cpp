@@ -22,7 +22,7 @@ public:
 	int seed = 7000;
 
 	ParticleType brush_choice = SAND;
-	int			 brush_size = 2;
+	int			 brush_size = 11;
 
 	std::vector<SandTile*> world_tiles; //fixed world size for now, otherwise the indexing can get wrong
 	SandTile* first_tile = nullptr;
@@ -216,7 +216,7 @@ public:
 		snprintf(tile_cell_count, 10, "%d", tile->simulated_cell_count);
 		DrawText(tile_cell_count, 50, 170, 20, col);
 
-		DrawCircleLines((int)GetMouseX(), (int)GetMouseY(), brush_size / 2 * scaled_tile_size, col);
+		DrawCircleLines((int)GetMouseX(), (int)GetMouseY(), (brush_size+1) / 2 * scaled_tile_size, col);
 	}
 
 	void AddParticles() {
@@ -242,11 +242,14 @@ public:
 			brush_choice = STEAM;
 		}
 
-		if (IsKeyPressed(KEY_T)) {
+		if (IsKeyPressed(KEY_R)) {
 			brush_size += 10;
 		}
-		else if (IsKeyPressed(KEY_R)) {
+		else if (IsKeyPressed(KEY_E)) {
 			brush_size -= 10;
+			if (brush_size < 1) {
+				brush_size = 1;
+			}
 		}
 
 		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {

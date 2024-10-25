@@ -101,7 +101,7 @@ public:
         switch (type) {
         case EMPTY: return  CLITERAL(Color) { 0, 0, 0, 100 };
         case STONE: return  ColorBrightness(DARKBROWN, rand_range(-0.3f, 0.1f));;
-        case SAND:  return  ColorBrightness(BROWN, rand_range(-0.9f, 0.9f));
+        case SAND:  return  ColorBrightness(BROWN, rand_range(-0.3f, 0.3f));
         case WATER: return  WATER_BLUE;
         case STEAM: return  ColorTint(WHITE, ColorBrightness(BLUE, rand_range(0.5, 0.7f)));
         default:    return  RED;
@@ -119,11 +119,14 @@ public:
         }
     }
 
-    void AddMaterialCircle(IntVector pos, int size, ParticleType m_type) {
-        size = size/2;
-        for (int i = - size; i < size; i++) {
-            for (int j = - size; j < size; j++) {
-                if (i * i + j * j <= size * size) {
+    void AddMaterialCircle(IntVector pos, int diameter, ParticleType m_type) {
+        if (diameter == 1) {
+            diameter = 2;
+        }
+        diameter = diameter/2;
+        for (int i = - diameter; i < diameter; i++) {
+            for (int j = - diameter; j < diameter; j++) {
+                if (i * i + j * j <= diameter * diameter) {
                     Particle p = { m_type, {0, 0}, ColorLookup(m_type) };
                     update_draws.push_back({ {i + pos.x, j + pos.y}, p });
                 }
@@ -131,11 +134,14 @@ public:
         }
     }
 
-    void DeleteMaterialCircle(IntVector pos, int size) {
-        size = size / 2;
-        for (int i = -size; i < size; i++) {
-            for (int j = -size; j < size; j++) {
-                if (i * i + j * j <= size * size) {
+    void DeleteMaterialCircle(IntVector pos, int diameter) {
+        if (diameter == 1) {
+            diameter = 2;
+        }
+        diameter = diameter / 2;
+        for (int i = -diameter; i < diameter; i++) {
+            for (int j = -diameter; j < diameter; j++) {
+                if (i * i + j * j <= diameter * diameter) {
                     if (InBounds({ i + pos.x, j + pos.y })) {
                         Particle* p = GetParticleAt({ i + pos.x, j + pos.y });
                         if (p->type != EMPTY) {
@@ -431,8 +437,10 @@ public:
             simulated_cell_remove();
         }
         else {
-            simulated_cell_add();
-            Particle *the = GetParticleAt(dst);
+            Particle* the = GetParticleAt(dst);
+            if (the->type == EMPTY) {
+                simulated_cell_add();
+            }
             if (the->type == new_p.type) {
                 ParticleType tp = new_p.type;
                 std::cout << "FUSION!!!" << std::endl; //shouldnt even get here 
@@ -442,17 +450,29 @@ public:
         grid[index(dst)] = new_p;
     }
 
-
-    void IterateTileAlternate() {
-
+    void UpdateDraws() {
         for (ParticleUpdateDraw& pud : update_draws) {
             if (InBounds(pud.pos)) {
                 if (GetParticleAt(pud.pos)->type == EMPTY) {
                     InsertParticle(pud.pos, pud.p);
                 }
             }
+            else {
+                IntVector new_pos = TranslateParticleToNeighbour(pud.pos, tile_size);
+                NeighbourTD new_tile = NeighbourFromPosition(pud.pos, tile_size);
+                if (NeighbourExists(new_tile)) {
+                    if (tile_neighbours[new_tile]->GetParticleAt(new_pos)->type == EMPTY) {
+                        tile_neighbours[new_tile]->InsertParticle(new_pos, pud.p);
+                    }
+                }
+            }
         }
         update_draws.clear();
+    }
+
+    void IterateTileAlternate() {
+
+        UpdateDraws();
 
         if (simulated_cell_count == 0 && simulated_previous == 0) {
             return;
@@ -478,8 +498,5 @@ public:
             SwapParticles(pu.source, pu.dest);
         }
         updates.clear();
-
-        
-
     }
 };
