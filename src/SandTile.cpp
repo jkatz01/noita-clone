@@ -34,7 +34,6 @@ public:
 
     Particle* grid = nullptr;
     std::vector<ParticleUpdate>         updates; 
-    std::vector<ParticleUpdateN_Move>   updates_to_neighours;
     std::vector<ParticleUpdateDraw>     update_draws;
 
     SandTile* tile_neighbours[8] = {nullptr}; // Starts at top middle, goes clockwise
@@ -183,6 +182,10 @@ public:
             if (tile_neighbours[n]->CanReplaceParticleN(p, pos_in_neighbour)) {
                 return n;
             }
+            else {
+                return ND_MYSELF;
+                // Cant replace particle == stay in myself
+            }
         }
         return ND_MYSELF;
     }
@@ -305,8 +308,12 @@ public:
         }
         else {
             end_pos = TranslateParticleToNeighbour(end_pos, tile_size);
-            QueueNeighbourMovementParticle(end_pos, *p, n_moved_to, diff);
+            Particle pcopy = *p;
             InsertParticle(pos, *tile_neighbours[n_moved_to]->GetParticleAt(end_pos));
+
+            // Lock mutex here?
+            tile_neighbours[n_moved_to]->InsertParticle(end_pos, pcopy);
+            MoveInFrameByDifference(end_pos, GetParticleAt(end_pos), diff);
         }
     }
 
@@ -321,9 +328,14 @@ public:
             }
         }
         else {
+            std::cout << "Moved to neighbour in MoveInFrame..." << std::endl;
             end_pos = TranslateParticleToNeighbour(end_pos, tile_size);
-            QueueNeighbourMovementParticle(end_pos, *p, n_moved_to, diff);
+            //QueueNeighbourMovementParticle(end_pos, *p, n_moved_to, diff);
+            Particle pcopy = *p;
             InsertParticle(pos, *tile_neighbours[n_moved_to]->GetParticleAt(end_pos));
+            // Lock mutex here?
+            tile_neighbours[n_moved_to]->InsertParticle(end_pos, pcopy);
+            MoveInFrameByDifference(end_pos, GetParticleAt(end_pos), diff);
         }
     }
 
@@ -397,13 +409,6 @@ public:
         updates.push_back({ v_src, v_dst });
     }
 
-    void QueueNeighbourMovementParticle(IntVector v_src, Particle p, NeighbourTD n_index, IntVector diff) {
-        if (!NeighbourExists(n_index)) {
-            return;
-        }
-        tile_neighbours[n_index]->updates_to_neighours.push_back({p, v_src, diff});
-    }
-    
     // swaps source with destination
     void SwapParticles(IntVector src, IntVector dst) {
         Particle temp = *GetParticleAt(src);
@@ -420,13 +425,27 @@ public:
         }
         else {
             simulated_cell_add();
+            Particle *the = GetParticleAt(dst);
+            if (the->type != EMPTY) {
+                ParticleType tp = new_p.type;
+                std::cout << "FUSION!!!" << std::endl; //shouldnt even get here 
+                new_p.colour = BLUE;
+            }
         }
         grid[index(dst)] = new_p;
     }
 
 
     void IterateTileAlternate() {
-        
+        // Apply moves from neighbours from previous frames
+        // these are events that should have occured last frame
+        //for (ParticleUpdateN_Move& pnu : updates_to_neighours) {
+        //    std::cout << "N UPDATE" << std::endl;
+        //    InsertParticle(pnu.dest, pnu.p); // fusion only happens here
+        //    MoveInFrameByDifference(pnu.dest, GetParticleAt(pnu.dest), pnu.diff);
+        //}
+        //updates_to_neighours.clear();
+
 
         // Update every particle based on old grid
         for (int i = 0; i < tile_size; i++) {
@@ -442,13 +461,7 @@ public:
             }
         }
 
-        // Apply moves from neighbours from previous frames
-        // these are events that should have occured last frame
-        for (ParticleUpdateN_Move& pnu : updates_to_neighours) {
-            InsertParticle(pnu.dest, pnu.p);
-            MoveInFrameByDifference(pnu.dest, GetParticleAt(pnu.dest), pnu.diff);
-        }
-        updates_to_neighours.clear();
+        
 
         // Update grid
         for (ParticleUpdate& pu : updates) {
@@ -465,6 +478,5 @@ public:
         }
         update_draws.clear();
 
-        
     }
 };

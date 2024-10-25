@@ -78,7 +78,6 @@ public:
 		for (int i = 0; i < tile_number; i++) {
 			SandTile *t = new SandTile(tile_size, { i % tile_width , i / tile_width });
 			world_tiles.push_back(t);
-			world_tiles.back()->AddMaterialSquare( { 90, 90 }, 30, SAND);
 		}
 		
 		MultiWorldAddNeighbours();
@@ -102,19 +101,6 @@ public:
 	void UpdateMultiTileWorld() {
 		for (SandTile* tile : world_tiles) {
 			tile->IterateTileAlternate();
-		}
-	}
-
-	void DrawMultiTileWorld() {
-		for (SandTile* tile : world_tiles) {
-			for (int i = 0; i < tile_size; i++) {
-				for (int j = 0; j < tile_size; j++) {
-					DrawRectangle(
-						(tile->position.x * tile_size + i) * scaled_tile_size,
-						(tile->position.y * tile_size + j) * scaled_tile_size,
-						scaled_tile_size, scaled_tile_size, (tile->grid[tile->index(i, j)].colour) );
-				}
-			}
 		}
 	}
 
