@@ -9,7 +9,7 @@ int main() {
 
 	InitWindow(world->screen_size, world->screen_size, "World");
 	SetTraceLogLevel(LOG_WARNING);
-	SetTargetFPS(60);
+	//SetTargetFPS(60);
 
 	world->MakeMultiTileWorld();
 	world->AllocateImageTileBuffers();

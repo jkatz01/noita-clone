@@ -39,6 +39,7 @@ public:
     SandTile* tile_neighbours[8] = {nullptr}; // Starts at top middle, goes clockwise
 
     int simulated_cell_count = 0;
+    int simulated_previous = 1;
 
     SandTile(int _tile_size, IntVector _position) {
         tile_size = _tile_size;
@@ -100,7 +101,7 @@ public:
         switch (type) {
         case EMPTY: return  CLITERAL(Color) { 0, 0, 0, 100 };
         case STONE: return  ColorBrightness(DARKBROWN, rand_range(-0.3f, 0.1f));;
-        case SAND:  return  ColorBrightness(BROWN, rand_range(-0.3f, 0.3f));
+        case SAND:  return  ColorBrightness(BROWN, rand_range(-0.9f, 0.9f));
         case WATER: return  WATER_BLUE;
         case STEAM: return  ColorTint(WHITE, ColorBrightness(BLUE, rand_range(0.5, 0.7f)));
         default:    return  RED;
@@ -324,7 +325,8 @@ public:
 
         if (n_moved_to == ND_MYSELF) {
             if (!(end_pos == pos)) {
-                SwapParticles(pos, end_pos);
+                p->should_update = 0;
+                SwapParticles(pos, end_pos); //maybe need a should_update flag?
             }
         }
         // TODO: Enable moving through more than 1 chunk per frame 
@@ -386,6 +388,10 @@ public:
         if (p->type == EMPTY) {
             return;
         }
+        if (p->should_update == 0) {
+            p->should_update = 1;
+            return;
+        }
         
             
         if (AbsVelocityLessThan(1, p)) { 
@@ -421,8 +427,6 @@ public:
 
     // swaps destination for any particle
     void InsertParticle(IntVector dst, Particle new_p) {
-        // this should be the only way for particles 
-        // to get deleted without a brush
         if (new_p.type == EMPTY) {
             simulated_cell_remove();
         }
@@ -440,15 +444,20 @@ public:
 
 
     void IterateTileAlternate() {
-        // Apply moves from neighbours from previous frames
-        // these are events that should have occured last frame
-        //for (ParticleUpdateN_Move& pnu : updates_to_neighours) {
-        //    std::cout << "N UPDATE" << std::endl;
-        //    InsertParticle(pnu.dest, pnu.p); // fusion only happens here
-        //    MoveInFrameByDifference(pnu.dest, GetParticleAt(pnu.dest), pnu.diff);
-        //}
-        //updates_to_neighours.clear();
 
+        for (ParticleUpdateDraw& pud : update_draws) {
+            if (InBounds(pud.pos)) {
+                if (GetParticleAt(pud.pos)->type == EMPTY) {
+                    InsertParticle(pud.pos, pud.p);
+                }
+            }
+        }
+        update_draws.clear();
+
+        if (simulated_cell_count == 0 && simulated_previous == 0) {
+            return;
+        }
+        simulated_previous = simulated_cell_count;
 
         // Update every particle based on old grid
         for (int i = 0; i < tile_size; i++) {
@@ -464,22 +473,13 @@ public:
             }
         }
 
-        
-
         // Update grid
         for (ParticleUpdate& pu : updates) {
             SwapParticles(pu.source, pu.dest);
         }
         updates.clear();
 
-        for (ParticleUpdateDraw& pud : update_draws) {
-            if (InBounds(pud.pos)) {
-                if (GetParticleAt(pud.pos)->type == EMPTY) {
-                    InsertParticle(pud.pos, pud.p);
-                }
-            }
-        }
-        update_draws.clear();
+        
 
     }
 };

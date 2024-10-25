@@ -149,7 +149,12 @@ public:
 			DrawRectangleLines(
 				(tile->position.x * tile_size) * scaled_tile_size,
 				(tile->position.y * tile_size) * scaled_tile_size,
-				tile_size * scaled_tile_size, tile_size * scaled_tile_size, {250, 0, 0, 100});
+				tile_size * scaled_tile_size, tile_size * scaled_tile_size, RED);
+		}
+	}
+
+	void DrawEmptyTiles() {
+		for (SandTile* tile : world_tiles) {
 			if (tile->simulated_cell_count == 0) {
 				DrawRectangle(
 					(tile->position.x * tile_size) * scaled_tile_size,
@@ -159,33 +164,14 @@ public:
 		}
 	}
 
-	void MakeOneTileWorld() {
-		srand(seed);
-		first_tile = new SandTile(tile_size, {0, 0});
-		first_tile->AddMaterialSquare( {90, 90}, 30, SAND);
-	}
-
-	void UpdateOneTileWorld() {
-		first_tile->IterateTileAlternate();
-	}
-
-	void DrawOneTileWorld() {
-		for (int i = 0; i < tile_size; i++) {
-			for (int j = 0; j < tile_size; j++) {
-				DrawRectangle(i * scaled_size, j * scaled_size, scaled_size, scaled_size, 
-								(first_tile->grid[first_tile->index(i, j)].colour));
-			}
-		}
-	}
-
-
 	void executeFrame() {
 		AddParticles();
 
+		DrawTileBoundaries();
+		DrawEmptyTiles();
+
 		UpdateMultiTileWorld();
 		DrawTileImages();
-		//DrawMultiTileWorld();
-		DrawTileBoundaries();
 
 		DrawFps();
 		DrawInfoStuff(BLACK);
@@ -230,7 +216,7 @@ public:
 		snprintf(tile_cell_count, 10, "%d", tile->simulated_cell_count);
 		DrawText(tile_cell_count, 50, 170, 20, col);
 
-		DrawCircleLines((int)GetMouseX(), (int)GetMouseY(), brush_size, col);
+		DrawCircleLines((int)GetMouseX(), (int)GetMouseY(), brush_size / 2 * scaled_tile_size, col);
 	}
 
 	void AddParticles() {
@@ -256,8 +242,15 @@ public:
 			brush_choice = STEAM;
 		}
 
+		if (IsKeyPressed(KEY_T)) {
+			brush_size += 10;
+		}
+		else if (IsKeyPressed(KEY_R)) {
+			brush_size -= 10;
+		}
+
 		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-			tile->AddMaterialSquare(inner_pos, brush_size, brush_choice);
+			tile->AddMaterialCircle(inner_pos, brush_size, brush_choice);
 		}
 		else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
 			tile->DeleteMaterialCircle(inner_pos, brush_size);
