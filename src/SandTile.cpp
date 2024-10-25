@@ -313,30 +313,33 @@ public:
 
             // Lock mutex here?
             tile_neighbours[n_moved_to]->InsertParticle(end_pos, pcopy);
-            MoveInFrameByDifference(end_pos, GetParticleAt(end_pos), diff);
+            tile_neighbours[n_moved_to]->MoveInFrameByDifference(end_pos, diff);
         }
     }
 
-    void MoveInFrameByDifference(IntVector pos, Particle* p, IntVector diff) {
+    void MoveInFrameByDifference(IntVector pos, IntVector diff) {
+        Particle* p = GetParticleAt(pos);
         NeighbourTD n_moved_to = ND_MYSELF;
         IntVector end_pos = MoveVelocity(pos, {p->velocity.x - diff.x, p->velocity.y - diff.y}, &n_moved_to);
-
 
         if (n_moved_to == ND_MYSELF) {
             if (!(end_pos == pos)) {
                 SwapParticles(pos, end_pos);
             }
         }
-        else {
-            std::cout << "Moved to neighbour in MoveInFrame..." << std::endl;
-            end_pos = TranslateParticleToNeighbour(end_pos, tile_size);
-            //QueueNeighbourMovementParticle(end_pos, *p, n_moved_to, diff);
-            Particle pcopy = *p;
-            InsertParticle(pos, *tile_neighbours[n_moved_to]->GetParticleAt(end_pos));
-            // Lock mutex here?
-            tile_neighbours[n_moved_to]->InsertParticle(end_pos, pcopy);
-            MoveInFrameByDifference(end_pos, GetParticleAt(end_pos), diff);
-        }
+        // TODO: Enable moving through more than 1 chunk per frame 
+        // This seems to happen even when it shouldnt
+        //else {
+        //    std::cout << "moved to neighobur in frame again" << std::endl;
+        //    // bug happens here
+        //    end_pos = TranslateParticleToNeighbour(end_pos, tile_size);
+        //    //QueueNeighbourMovementParticle(end_pos, *p, n_moved_to, diff);
+        //    Particle pcopy = *p;
+        //    InsertParticle(pos, *tile_neighbours[n_moved_to]->GetParticleAt(end_pos));
+        //    // Lock mutex here?
+        //    tile_neighbours[n_moved_to]->InsertParticle(end_pos, pcopy);
+        //    tile_neighbours[n_moved_to]->MoveInFrameByDifference(end_pos, GetParticleAt(end_pos), diff);
+        //}
     }
 
 
@@ -426,7 +429,7 @@ public:
         else {
             simulated_cell_add();
             Particle *the = GetParticleAt(dst);
-            if (the->type != EMPTY) {
+            if (the->type == new_p.type) {
                 ParticleType tp = new_p.type;
                 std::cout << "FUSION!!!" << std::endl; //shouldnt even get here 
                 new_p.colour = BLUE;

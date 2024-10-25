@@ -22,7 +22,7 @@ public:
 	int seed = 7000;
 
 	ParticleType brush_choice = SAND;
-	int			 brush_size = 20;
+	int			 brush_size = 2;
 
 	std::vector<SandTile*> world_tiles; //fixed world size for now, otherwise the indexing can get wrong
 	SandTile* first_tile = nullptr;
@@ -78,6 +78,7 @@ public:
 		for (int i = 0; i < tile_number; i++) {
 			SandTile *t = new SandTile(tile_size, { i % tile_width , i / tile_width });
 			world_tiles.push_back(t);
+			//t->AddMaterialSquare({50, 50}, 2, SAND);
 		}
 		
 		MultiWorldAddNeighbours();
@@ -148,7 +149,7 @@ public:
 			DrawRectangleLines(
 				(tile->position.x * tile_size) * scaled_tile_size,
 				(tile->position.y * tile_size) * scaled_tile_size,
-				tile_size * scaled_tile_size, tile_size * scaled_tile_size, RED);
+				tile_size * scaled_tile_size, tile_size * scaled_tile_size, {250, 0, 0, 100});
 			if (tile->simulated_cell_count == 0) {
 				DrawRectangle(
 					(tile->position.x * tile_size) * scaled_tile_size,
@@ -256,7 +257,7 @@ public:
 		}
 
 		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-			tile->AddMaterialCircle(inner_pos, brush_size, brush_choice);
+			tile->AddMaterialSquare(inner_pos, brush_size, brush_choice);
 		}
 		else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
 			tile->DeleteMaterialCircle(inner_pos, brush_size);
