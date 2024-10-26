@@ -17,7 +17,7 @@ public:
 	int scaled_size		 = screen_size / tile_size;
 	int tiles_width		 = 1;
 	int tiles_height     = tiles_width;
-	int scaled_tile_size = scaled_size / tiles_width;
+	int pixel_size		 = scaled_size;
 	int tile_number		 = tiles_width * tiles_height;
 
 	size_t seed = 7000;
@@ -42,7 +42,7 @@ public:
 
 		tile_size = world_size / tiles_width;
 		scaled_size = screen_size / world_size;
-		scaled_tile_size = scaled_size;
+		pixel_size = scaled_size;
 		tile_number = tiles_width * tiles_height;
 
 		world_tiles.reserve(tile_number);
@@ -57,7 +57,7 @@ public:
 		if (!MouseInBounds(screen_pos)) {
 			return {0, 0};
 		}
-		IntVector new_pos = { screen_pos.x / scaled_tile_size, screen_pos.y / scaled_tile_size };
+		IntVector new_pos = { screen_pos.x / pixel_size, screen_pos.y / pixel_size };
 		return new_pos;
 	}
 	IntVector CursorToTile(IntVector grid_pos) {
@@ -148,9 +148,9 @@ public:
 			Image img = MakeTileImage(world_tiles[i], tile_color_buffers[i]);
 			textures.push_back(LoadTextureFromImage(img));
 			IntVector pos = VectorFromIndex(i);
-			DrawTextureEx(textures.back(), Vector2{(float)(world_tiles[i]->position.x * tile_size) * scaled_tile_size,
-				(float)(world_tiles[i]->position.y * tile_size) * scaled_tile_size},
-				0, scaled_tile_size, WHITE);
+			DrawTextureEx(textures.back(), Vector2{(float)(world_tiles[i]->position.x * tile_size) * pixel_size,
+				(float)(world_tiles[i]->position.y * tile_size) * pixel_size},
+				0, pixel_size, WHITE);
 		}
 		
 	}
@@ -159,9 +159,9 @@ public:
 	void DrawTileBoundaries() {
 		for (SandTile* tile : world_tiles) {
 			DrawRectangleLines(
-				(tile->position.x * tile_size) * scaled_tile_size,
-				(tile->position.y * tile_size) * scaled_tile_size,
-				tile_size * scaled_tile_size, tile_size * scaled_tile_size, RED);
+				(tile->position.x * tile_size) * pixel_size,
+				(tile->position.y * tile_size) * pixel_size,
+				tile_size * pixel_size, tile_size * pixel_size, RED);
 		}
 	}
 
@@ -169,9 +169,22 @@ public:
 		for (SandTile* tile : world_tiles) {
 			if (tile->simulated_cell_count == 0) {
 				DrawRectangle(
-					(tile->position.x * tile_size) * scaled_tile_size,
-					(tile->position.y * tile_size) * scaled_tile_size,
-					tile_size * scaled_tile_size, tile_size * scaled_tile_size, Color{ 50, 200, 50, 100 });
+					(tile->position.x * tile_size) * pixel_size,
+					(tile->position.y * tile_size) * pixel_size,
+					tile_size * pixel_size, tile_size * pixel_size, Color{ 50, 200, 50, 100 });
+			}
+		}
+	}
+
+	void DrawDirtyRecs() {
+		for (SandTile* tile : world_tiles) {
+			if (tile->simulated_cell_count != 0) {
+				DrawRectangleLines(
+					(tile->position.x * tile_size + tile->d_rec.min.x) * pixel_size,
+					(tile->position.y * tile_size + tile->d_rec.min.y) * pixel_size,
+					(tile->d_rec.max.x - tile->d_rec.min.x + 1) * pixel_size,
+					(tile->d_rec.max.y - tile->d_rec.min.y + 1) * pixel_size,
+					GREEN);
 			}
 		}
 	}
@@ -180,11 +193,13 @@ public:
 		BrushSettings();
 		BrushInput();
 
-		DrawTileBoundaries();
-		DrawEmptyTiles();
-
 		UpdateMultiTileWorld();
 		DrawTileImages();
+
+		DrawEmptyTiles();
+		DrawTileBoundaries();
+		DrawDirtyRecs();
+		
 
 		frame_counter++;
 	}
@@ -232,7 +247,7 @@ public:
 		snprintf(tile_cell_count, 10, "%d", tile->simulated_cell_count);
 		DrawTextEx(font, tile_cell_count, { 50, float(50 + font.baseSize * 4 ) }, font.baseSize, 0, col);
 
-		DrawCircleLines((int)GetMouseX(), (int)GetMouseY(), (brush_size+1) / 2 * scaled_tile_size, col);
+		DrawCircleLines((int)GetMouseX(), (int)GetMouseY(), (brush_size+1) / 2 * pixel_size, col);
 	}
 
 	void AddMaterialSingleInWorld(IntVector world_pos, ParticleType m_type) {

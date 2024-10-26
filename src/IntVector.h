@@ -7,6 +7,11 @@ public:
 
 	int x, y;
 
+	IntVector() {
+		x = -1;
+		y = -1;
+	}
+
 	IntVector(int _x, int _y) {
 		x = _x;
 		y = _y;

@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <vector>
+#include <algorithm>
 #include "raylib.h"
 #include "raymath.h"
 
@@ -15,16 +16,14 @@ struct ParticleUpdate {
     IntVector dest;
 };
 
-// Applies all moves from neighbours from previous frames
-struct ParticleUpdateN_Move { 
-    Particle  p;
-    IntVector dest;
-    IntVector diff;
-};
-
 struct ParticleUpdateDraw {
     IntVector pos;
     Particle p;
+};
+
+struct TileRectangle {
+    IntVector min;
+    IntVector max;
 };
 
 class SandTile {
@@ -40,6 +39,8 @@ public:
 
     int simulated_cell_count = 0;
     int simulated_previous = 1;
+    TileRectangle d_rec   = { {0, 0}, {0, 0} }; // Update zone
+    TileRectangle d_rec_w = { {0, 0}, {0, 0} };
 
     SandTile(int _tile_size, IntVector _position) {
         tile_size = _tile_size;
@@ -430,6 +431,12 @@ public:
         Particle temp = *GetParticleAt(src);
         grid[index(src)] = *GetParticleAt(dst);
         grid[index(dst)] = temp;
+
+        UpdateSimZone(src);
+        UpdateSimZone(dst);
+        // need to notify neighbour if an update happened on the border
+        UpdateNeighbourZones(src);
+        UpdateNeighbourZones(dst);
     }
 
     // swaps destination for any particle
@@ -448,6 +455,8 @@ public:
                 new_p.colour = BLUE;
             }
         }
+        UpdateSimZone(dst);
+        UpdateNeighbourZones(dst);
         grid[index(dst)] = new_p;
     }
 
@@ -471,33 +480,98 @@ public:
         update_draws.clear();
     }
 
-    void IterateTileAlternate() {
+    int ClampInt(int num, int low, int high) {
+        if (num < low) return low;
+        if (num > high) return high;
+        return num;
+    }
+    int ClampInTile(int num) {
+        if (num < 0) return 0;
+        if (num > tile_size - 1) return tile_size - 1;
+        return num;
+    }
 
-        UpdateDraws();
+    void UpdateNeighbourZones(IntVector src) {
+        IntVector src_neighbours[8];
+        Particle* p = GetParticleAt(src);
+        int y_vel = std::max((int)abs(p->velocity.y), 1);
+        int x_vel = std::max((int)abs(p->velocity.x), 1);
 
-        if (simulated_cell_count == 0 && simulated_previous == 0) {
-            return;
+        if (!InBounds({ src.x, src.y - y_vel })) {
+            src_neighbours[ND_UP] = { src.x, src.y - y_vel };
+            if (!InBounds({ src.x - x_vel, src.y - y_vel }))
+                src_neighbours[ND_UP_LEFT] = { src.x - x_vel, src.y - y_vel };
+            if (!InBounds({ src.x + x_vel, src.y - y_vel }))
+                src_neighbours[ND_UP_RIGHT] = { src.x + x_vel, src.y - y_vel };
         }
-        simulated_previous = simulated_cell_count;
+        if (!InBounds({ src.x, src.y + y_vel })) {
+            src_neighbours[ND_DOWN] = { src.x, src.y + y_vel };
+            if (!InBounds({ src.x - x_vel, src.y + x_vel }))
+                src_neighbours[ND_DOWN_LEFT] = { src.x - x_vel, src.y + y_vel };
+            if (!InBounds({ src.x + x_vel, src.y + y_vel }))
+                src_neighbours[ND_DOWN_RIGHT] = { src.x + x_vel, src.y + y_vel };
+        }
+        for (int i = 0; i < 8; i++) {
+            if (!(src_neighbours[i] == IntVector{-1, -1})) {
+                if (NeighbourExists((NeighbourTD)i)) {
+                    tile_neighbours[i]->UpdateSimZone(TranslateParticleToNeighbour(src_neighbours[i], tile_size));
+                }
+            }
+        }
+    }
 
+    void UpdateSimZone(IntVector point) {
+        d_rec_w.min.x = ClampInTile(std::min(point.x - 2, d_rec_w.min.x));
+        d_rec_w.min.y = ClampInTile(std::min(point.y - 2, d_rec_w.min.y));
+        d_rec_w.max.x = ClampInTile(std::max(point.x + 2, d_rec_w.max.x));
+        d_rec_w.max.y = ClampInTile(std::max(point.y + 2, d_rec_w.max.y));
+    }
+
+    void UpdateZoneRectangle() {
+        d_rec.min.x = d_rec_w.min.x;
+        d_rec.min.y = d_rec_w.min.y;
+        d_rec.max.x = d_rec_w.max.x;
+        d_rec.max.y = d_rec_w.max.y;
+
+        d_rec_w.min.x = tile_size;
+        d_rec_w.min.y = tile_size;
+        d_rec_w.max.x = -1;
+        d_rec_w.max.y = -1;
+    }
+
+    void UpdateParticles(TileRectangle zone) {
         // Update every particle based on old grid
-        for (int i = 0; i < tile_size; i++) {
+        for (int i = zone.min.y; i <= zone.max.y; i++) {
             if ((i & 1) == 0) {
-                for (int j = 0; j < tile_size; j++) {
+                for (int j = zone.min.x; j <= zone.max.x; j++) {
                     UpdateParticle(IntVector{ j, i });
                 }
             }
             else {
-                for (int j = tile_size - 1; j >= 0; j--) {
+                for (int j = zone.max.x; j >= zone.min.x; j--) {
                     UpdateParticle(IntVector{ j, i });
                 }
             }
         }
+    }
+
+    void IterateTileAlternate() {
+        UpdateDraws();
+
+        if (simulated_cell_count == 0 && simulated_previous == 0) {
+            UpdateZoneRectangle();
+            return;
+        }
+        simulated_previous = simulated_cell_count;
+
+        UpdateParticles(d_rec);
 
         // Update grid
         for (ParticleUpdate& pu : updates) {
             SwapParticles(pu.source, pu.dest);
         }
         updates.clear();
+
+        UpdateZoneRectangle();
     }
 };
