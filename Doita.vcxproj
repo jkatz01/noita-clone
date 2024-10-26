@@ -142,6 +142,12 @@
     <ClInclude Include="src\SandData.h" />
     <ClInclude Include="src\NeighbourTD.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Font Include="assets\PERBI___.TTF" />
+    <Font Include="assets\PERB____.TTF" />
+    <Font Include="assets\PERI____.TTF" />
+    <Font Include="assets\PER_____.TTF" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

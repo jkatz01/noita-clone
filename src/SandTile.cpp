@@ -110,26 +110,27 @@ public:
 
     // I thiink all of these need to be queued
 
+    void AddMaterialSingle(IntVector pos, ParticleType m_type) {
+        if (!InBounds(pos)) return;
+        Particle p = { m_type, {0, 0}, ColorLookup(m_type) };
+        update_draws.push_back({ pos, p });
+    }
+
+    void DeleteMaterialSingle(IntVector pos) {
+        if (!InBounds(pos)) return;
+        Particle* p = GetParticleAt(pos);
+        if (p->type != EMPTY) {
+            simulated_cell_remove();
+        }
+        p->type = EMPTY; // TAG: @cell-emptied
+        p->colour = ColorLookup(EMPTY);
+    }
+
     void AddMaterialSquare(IntVector pos, int size, ParticleType m_type) {
         for (int i = pos.x; i < pos.x + size; i++) {
             for (int j = pos.y; j < pos.y + size; j++) {
                 Particle p = {m_type, {0, 0}, ColorLookup(m_type) };
                 update_draws.push_back({{i, j}, p});
-            }
-        }
-    }
-
-    void AddMaterialCircle(IntVector pos, int diameter, ParticleType m_type) {
-        if (diameter == 1) {
-            diameter = 2;
-        }
-        diameter = diameter/2;
-        for (int i = - diameter; i < diameter; i++) {
-            for (int j = - diameter; j < diameter; j++) {
-                if (i * i + j * j <= diameter * diameter) {
-                    Particle p = { m_type, {0, 0}, ColorLookup(m_type) };
-                    update_draws.push_back({ {i + pos.x, j + pos.y}, p });
-                }
             }
         }
     }

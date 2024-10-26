@@ -52,4 +52,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <Font Include="assets\PER_____.TTF">
+      <Filter>Resource Files</Filter>
+    </Font>
+    <Font Include="assets\PERB____.TTF">
+      <Filter>Resource Files</Filter>
+    </Font>
+    <Font Include="assets\PERBI___.TTF">
+      <Filter>Resource Files</Filter>
+    </Font>
+    <Font Include="assets\PERI____.TTF">
+      <Filter>Resource Files</Filter>
+    </Font>
+  </ItemGroup>
 </Project>

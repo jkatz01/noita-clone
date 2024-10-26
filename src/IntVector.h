@@ -1,4 +1,5 @@
 #include <cmath>
+#include "raylib.h"
 
 #pragma once
 class IntVector {
@@ -23,6 +24,10 @@ public:
 		dy = y - vec2.y;
 
 		return std::sqrt(dx * dx + dy * dy);
+	}
+
+	Vector2 toVector2() {
+		return {(float)x, (float)y};
 	}
 
 };
