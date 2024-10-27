@@ -129,6 +129,8 @@
   <ItemGroup>
     <ClCompile Include="src\NeighbourTD.cpp" />
     <ClCompile Include="src\IntVector.h" />
+    <ClCompile Include="src\RandomRange.cpp" />
+    <ClCompile Include="src\SandData.cpp" />
     <ClCompile Include="src\SandWorld.cpp" />
     <Text Include="old\old_program.txt" />
     <ClCompile Include="src\Main.cpp" />
@@ -139,6 +141,7 @@
     <Image Include="assets\buddyworld.png" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\RandomRange.h" />
     <ClInclude Include="src\SandData.h" />
     <ClInclude Include="src\NeighbourTD.h" />
   </ItemGroup>

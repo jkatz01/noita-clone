@@ -10,6 +10,7 @@
 #include "IntVector.h"
 #include "SandData.h"
 #include "NeighbourTD.h"
+#include "RandomRange.h"
 
 struct ParticleUpdate {
     IntVector source;
@@ -96,29 +97,9 @@ public:
         return false;
     }
 
-    float rand_range(float min, float max)
-    {
-        float random = (float)rand() / RAND_MAX;
-        float range = max - min;
-        return (random * range) + min;
-    }
-
-    Color ColorLookup(ParticleType type) {
-        switch (type) {
-        case EMPTY: return  CLITERAL(Color) { 0, 0, 0, 100 };
-        case STONE: return  ColorBrightness(DARKBROWN, rand_range(-0.3f, 0.1f));;
-        case SAND:  return  ColorBrightness(BROWN, rand_range(-0.3f, 0.3f));
-        case WATER: return  WATER_BLUE;
-        case STEAM: return  ColorTint(WHITE, ColorBrightness(BLUE, rand_range(0.5, 0.7f)));
-        default:    return  RED;
-        }
-    }
-
-    // I thiink all of these need to be queued
-
     void AddMaterialSingle(IntVector pos, ParticleType m_type) {
         if (!InBounds(pos)) return;
-        Particle p = { m_type, {0, 0}, ColorLookup(m_type) };
+        Particle p = { m_type, {0, 0}, GenerateParticleColor(m_type) };
         update_draws.push_back({ pos, p });
     }
 
@@ -126,7 +107,7 @@ public:
         if (!InBounds(pos)) return;
         Particle* p = GetParticleAt(pos);
         if (p->type != EMPTY) {
-            Particle pp = { EMPTY, {0, 0}, ColorLookup(EMPTY) };
+            Particle pp = { EMPTY, {0, 0}, GenerateParticleColor(EMPTY) };
             InsertParticle(pos, pp);
         }
 
@@ -135,7 +116,7 @@ public:
     void AddMaterialSquare(IntVector pos, int size, ParticleType m_type) {
         for (int i = pos.x; i < pos.x + size; i++) {
             for (int j = pos.y; j < pos.y + size; j++) {
-                Particle p = {m_type, {0, 0}, ColorLookup(m_type) };
+                Particle p = {m_type, {0, 0}, GenerateParticleColor(m_type) };
                 update_draws.push_back({{i, j}, p});
             }
         }
@@ -155,7 +136,7 @@ public:
                             simulated_cell_remove();
                         }
                         p->type = EMPTY; // TAG: @cell-emptied
-                        p->colour = ColorLookup(EMPTY);
+                        p->colour = GenerateParticleColor(EMPTY);
                     }
                 }
             }

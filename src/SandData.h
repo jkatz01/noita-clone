@@ -3,6 +3,7 @@
 #include <vector>
 #include "IntVector.h"
 #include "raylib.h"
+#include "RandomRange.h"
 
 #define PARTICLE_TYPE_COUNT 6
 
@@ -28,6 +29,16 @@ struct Particle {
     short        should_update = 1;
 };
 
+Color GenerateParticleColor(ParticleType type);
+
+// Movement Directions
+static const std::vector<Vector2> MT_STATIC      = { {0, 0} };
+static const std::vector<Vector2> MT_DOWN_ONLY   = { {0, 1} };
+static const std::vector<Vector2> MT_POWDER      = { {0, 1}, {-1, 1}, {1, 1} };
+static const std::vector<Vector2> MT_LIQUID      = { {0, 1}, {-1, 1}, {1, 1}, {-1, 0}, {1, 0} };
+static const std::vector<Vector2> MT_GAS         = { {0, -1}, {-1, -1}, {1, -1}, {-1, 0}, {1, 0} };
+static const std::vector<Vector2> MT_CRAZY       = { {-5, -5}, {5, -5}, {5, 5}, {-5, 0}, {5, 0}, {0, -5}, {0, 5}, {-5, 5},};
+
 struct ParticleParams {
     const std::vector<Vector2>* movement_type;
     const float       density;
@@ -36,13 +47,10 @@ struct ParticleParams {
     const float       max_vel;
     const std::string type_name;
 };
-
-// Movement Directions
-static const std::vector<Vector2> MT_STATIC      = { {0, 0} };
-static const std::vector<Vector2> MT_DOWN_ONLY   = { {0, 1} };
-static const std::vector<Vector2> MT_POWDER      = { {0, 1}, {-1, 1}, {1, 1} };
-static const std::vector<Vector2> MT_LIQUID      = { {0, 1}, {-1, 1}, {1, 1}, {-1, 0}, {1, 0} };
-static const std::vector<Vector2> MT_GAS         = { {0, -1}, {-1, -1}, {1, -1}, {-1, 0}, {1, 0} };
+// potential features:
+// heat absorption rate
+// percentage of downwards velocity converted to sideways velocity
+//      maybe transfer the rest to neighbour?
 
 static const ParticleParams param_ref[PARTICLE_TYPE_COUNT] = {
     // MT      density  drag   grav max_v   name
@@ -51,8 +59,22 @@ static const ParticleParams param_ref[PARTICLE_TYPE_COUNT] = {
     {&MT_DOWN_ONLY,  2,    1,     1,    1,  "down_only"},   // DOWN
     {&MT_POWDER,     2,    0,     1,    5,  "sand"},        // SAND
     {&MT_LIQUID,     1,    1,     1,    5,  "water"},       // WATER
-    {&MT_GAS,        0,    1, -0.5f,    1,  "steam"}        // STEAM
+    {&MT_GAS,        0,    1, -0.5f,    1,  "steam"}       // STEAM
 };
 
+struct ParticleColors {
+    Color colour;
+    float bright_min;
+    float bright_max;
+    Color tint;
+};
 
+static const ParticleColors color_ref[PARTICLE_TYPE_COUNT] = {
+    {{ 0, 0, 0, 100 }, 0, 0, WHITE}, //empty
+    {DARKBROWN, -0.3f, 0.1f, WHITE}, //stone
+    {GREEN, -0.3f, 0.3f, WHITE}, //down
+    {BROWN, -0.3f, 0.3f, WHITE}, //sand
+    {WATER_BLUE, 0, 0, WHITE}, //water
+    {BLUE, 0.5f, 0.7f, WHITE} //steam
+};
 

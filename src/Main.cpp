@@ -17,10 +17,10 @@ int main() {
 	Font font = LoadFontEx("assets/PERB____.ttf", 48, 0, 0);
 	SetTextureFilter(font.texture, TEXTURE_FILTER_TRILINEAR);
 
-	Image buddyworld = LoadImage("assets/beautifu.png");
+	Image buddyworld = LoadImage("assets/buddyworld.png");
 	//ImageCrop(&buddyworld, (Rectangle){ 100, 10, 280, 380 });      // Crop an image piece
 	//ImageFlipHorizontal(&buddyworld);                              // Flip cropped image horizontally
-	ImageResize(&buddyworld, 1200, 1200);                            // Resize flipped-cropped image
+	ImageResize(&buddyworld, 800, 800);                            // Resize flipped-cropped image
 	Texture2D bg_texture = LoadTextureFromImage(buddyworld);
 	UnloadImage(buddyworld);
 
@@ -28,7 +28,7 @@ int main() {
 		BeginDrawing();
 		ClearBackground(DARKGRAY);
 
-		//DrawTexture(bg_texture, 0, 0, WHITE);
+		DrawTexture(bg_texture, 0, 0, WHITE);
 
 		world->executeFrame();
 
