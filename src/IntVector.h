@@ -8,8 +8,8 @@ public:
 	int x, y;
 
 	IntVector() {
-		x = -1;
-		y = -1;
+		x = -9999;
+		y = -9999;
 	}
 
 	IntVector(int _x, int _y) {

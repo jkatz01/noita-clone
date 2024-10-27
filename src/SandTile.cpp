@@ -84,6 +84,11 @@ public:
         return ((pos.x >= 0 && pos.x < tile_size) && (pos.y >= 0 && pos.y < tile_size));
     }
 
+    bool InBoundsThick(IntVector pos, int thickness) {
+        return ((pos.x >= 0 + thickness && pos.x < tile_size - thickness) 
+                    && (pos.y >= 0 + thickness && pos.y < tile_size - thickness));
+    }
+
     bool NeighbourExists(NeighbourTD index) {
         if (index != ND_MYSELF && tile_neighbours[index] != NULL) {
             return true;
@@ -121,10 +126,10 @@ public:
         if (!InBounds(pos)) return;
         Particle* p = GetParticleAt(pos);
         if (p->type != EMPTY) {
-            simulated_cell_remove();
+            Particle pp = { EMPTY, {0, 0}, ColorLookup(EMPTY) };
+            InsertParticle(pos, pp);
         }
-        p->type = EMPTY; // TAG: @cell-emptied
-        p->colour = ColorLookup(EMPTY);
+
     }
 
     void AddMaterialSquare(IntVector pos, int size, ParticleType m_type) {
@@ -314,6 +319,9 @@ public:
                 //DrawStupidLines(pos, end_pos);
                 QueueUpdateSwapParticles(pos, end_pos); 
             }
+            else {
+                //UpdateSimZone(pos);
+            }
         }
         else {
             end_pos = TranslateParticleToNeighbour(end_pos, tile_size);
@@ -400,7 +408,6 @@ public:
             p->should_update = 1;
             return;
         }
-        
             
         if (AbsVelocityLessThan(1, p)) { 
             GetNewParticleVelocity(pos, p);
@@ -435,8 +442,8 @@ public:
         UpdateSimZone(src);
         UpdateSimZone(dst);
         // need to notify neighbour if an update happened on the border
-        UpdateNeighbourZones(src);
-        UpdateNeighbourZones(dst);
+        if(!InBoundsThick(src, 1)) UpdateNeighbourZones(src);
+        if(!InBoundsThick(dst, 1)) UpdateNeighbourZones(dst);
     }
 
     // swaps destination for any particle
@@ -456,7 +463,7 @@ public:
             }
         }
         UpdateSimZone(dst);
-        UpdateNeighbourZones(dst);
+        if (!InBoundsThick(dst, 1)) UpdateNeighbourZones(dst);
         grid[index(dst)] = new_p;
     }
 
@@ -497,22 +504,30 @@ public:
         int y_vel = std::max((int)abs(p->velocity.y), 1);
         int x_vel = std::max((int)abs(p->velocity.x), 1);
 
+        //oh, i wasnt accounting for left/right
+        if (!InBounds({ src.x - x_vel, src.y})) {
+            src_neighbours[ND_LEFT] = { src.x - 1, src.y };
+        }
+        if (!InBounds({ src.x + x_vel, src.y })) {
+            src_neighbours[ND_RIGHT] = { src.x + 1, src.y };
+        }
         if (!InBounds({ src.x, src.y - y_vel })) {
-            src_neighbours[ND_UP] = { src.x, src.y - y_vel };
+            src_neighbours[ND_UP] = { src.x, src.y - 1 };
             if (!InBounds({ src.x - x_vel, src.y - y_vel }))
-                src_neighbours[ND_UP_LEFT] = { src.x - x_vel, src.y - y_vel };
+                src_neighbours[ND_UP_LEFT] = { src.x - 1, src.y - 1 };
             if (!InBounds({ src.x + x_vel, src.y - y_vel }))
-                src_neighbours[ND_UP_RIGHT] = { src.x + x_vel, src.y - y_vel };
+                src_neighbours[ND_UP_RIGHT] = { src.x + 1, src.y - 1 };
         }
         if (!InBounds({ src.x, src.y + y_vel })) {
-            src_neighbours[ND_DOWN] = { src.x, src.y + y_vel };
+            src_neighbours[ND_DOWN] = { src.x, src.y + 1 };
             if (!InBounds({ src.x - x_vel, src.y + x_vel }))
-                src_neighbours[ND_DOWN_LEFT] = { src.x - x_vel, src.y + y_vel };
+                src_neighbours[ND_DOWN_LEFT] = { src.x - 1, src.y + 1 }; 
             if (!InBounds({ src.x + x_vel, src.y + y_vel }))
-                src_neighbours[ND_DOWN_RIGHT] = { src.x + x_vel, src.y + y_vel };
-        }
+                src_neighbours[ND_DOWN_RIGHT] = { src.x + 1, src.y + 1 };
+        } 
+
         for (int i = 0; i < 8; i++) {
-            if (!(src_neighbours[i] == IntVector{-1, -1})) {
+            if (!(src_neighbours[i] == IntVector{-9999, -9999})) {
                 if (NeighbourExists((NeighbourTD)i)) {
                     tile_neighbours[i]->UpdateSimZone(TranslateParticleToNeighbour(src_neighbours[i], tile_size));
                 }
@@ -521,10 +536,11 @@ public:
     }
 
     void UpdateSimZone(IntVector point) {
-        d_rec_w.min.x = ClampInTile(std::min(point.x - 2, d_rec_w.min.x));
-        d_rec_w.min.y = ClampInTile(std::min(point.y - 2, d_rec_w.min.y));
-        d_rec_w.max.x = ClampInTile(std::max(point.x + 2, d_rec_w.max.x));
-        d_rec_w.max.y = ClampInTile(std::max(point.y + 2, d_rec_w.max.y));
+        Particle *p = GetParticleAt(point);
+        d_rec_w.min.x = ClampInTile(std::min(point.x - abs((int)p->velocity.x) - 2, d_rec_w.min.x));
+        d_rec_w.min.y = ClampInTile(std::min(point.y - abs((int)p->velocity.y) - 2, d_rec_w.min.y));
+        d_rec_w.max.x = ClampInTile(std::max(point.x + abs((int)p->velocity.x) + 2, d_rec_w.max.x));
+        d_rec_w.max.y = ClampInTile(std::max(point.y + abs((int)p->velocity.y) + 2, d_rec_w.max.y));
     }
 
     void UpdateZoneRectangle() {
@@ -539,16 +555,21 @@ public:
         d_rec_w.max.y = -1;
     }
 
-    void UpdateParticles(TileRectangle zone) {
+    void UpdateParticles() {
         // Update every particle based on old grid
-        for (int i = zone.min.y; i <= zone.max.y; i++) {
+        int min_x = std::min(d_rec.min.x, d_rec_w.min.x);
+        int min_y = std::min(d_rec.min.y, d_rec_w.min.y);
+        int max_x = std::max(d_rec.max.x, d_rec_w.max.x);
+        int max_y = std::max(d_rec.max.y, d_rec_w.max.y);
+
+        for (int i = min_y; i <= max_y; i++) {
             if ((i & 1) == 0) {
-                for (int j = zone.min.x; j <= zone.max.x; j++) {
+                for (int j = min_x; j <= max_x; j++) {
                     UpdateParticle(IntVector{ j, i });
                 }
             }
             else {
-                for (int j = zone.max.x; j >= zone.min.x; j--) {
+                for (int j = max_x; j >= min_x; j--) {
                     UpdateParticle(IntVector{ j, i });
                 }
             }
@@ -557,6 +578,7 @@ public:
 
     void IterateTileAlternate() {
         UpdateDraws();
+        
 
         if (simulated_cell_count == 0 && simulated_previous == 0) {
             UpdateZoneRectangle();
@@ -564,7 +586,7 @@ public:
         }
         simulated_previous = simulated_cell_count;
 
-        UpdateParticles(d_rec);
+        UpdateParticles();
 
         // Update grid
         for (ParticleUpdate& pu : updates) {
@@ -573,5 +595,6 @@ public:
         updates.clear();
 
         UpdateZoneRectangle();
+        
     }
 };

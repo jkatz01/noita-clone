@@ -5,11 +5,11 @@
 SandWorld* world;
 
 int main() {
-	world = new SandWorld(200, 800, 8);
+	world = new SandWorld(800, 800, 16);
 
 	InitWindow(world->screen_size, world->screen_size, "World");
 	SetTraceLogLevel(LOG_WARNING);
-	SetTargetFPS(10);
+	//SetTargetFPS(60);
 
 	world->MakeMultiTileWorld();
 	world->AllocateImageTileBuffers();

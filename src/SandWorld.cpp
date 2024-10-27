@@ -171,7 +171,7 @@ public:
 				DrawRectangle(
 					(tile->position.x * tile_size) * pixel_size,
 					(tile->position.y * tile_size) * pixel_size,
-					tile_size * pixel_size, tile_size * pixel_size, Color{ 50, 200, 50, 100 });
+					tile_size * pixel_size, tile_size * pixel_size, Color{ 0, 0, 0, 150 });
 			}
 		}
 	}
@@ -197,7 +197,7 @@ public:
 		DrawTileImages();
 
 		DrawEmptyTiles();
-		DrawTileBoundaries();
+		//DrawTileBoundaries();
 		DrawDirtyRecs();
 		
 
