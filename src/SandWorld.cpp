@@ -24,7 +24,7 @@ public:
 	size_t frame_counter = 0;
 
 	ParticleType brush_choice = SAND;
-	int			 brush_size = 2;
+	int			 brush_size = 1;
 
 	std::vector<SandTile*> world_tiles; //fixed world size for now, otherwise the indexing can get wrong
 	SandTile* first_tile = nullptr;

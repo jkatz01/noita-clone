@@ -418,6 +418,8 @@ public:
 
         ApplyGravity(p);
 
+        // Apply more rules
+
         MoveAndQueueParticle(pos, p);
         
     }
@@ -505,24 +507,24 @@ public:
         int x_vel = std::max((int)abs(p->velocity.x), 1);
 
         //oh, i wasnt accounting for left/right
-        if (!InBounds({ src.x - x_vel, src.y})) {
+        if (src.x - x_vel < 0) {
             src_neighbours[ND_LEFT] = { src.x - 1, src.y };
         }
-        if (!InBounds({ src.x + x_vel, src.y })) {
+        if (src.x + x_vel >= tile_size) {
             src_neighbours[ND_RIGHT] = { src.x + 1, src.y };
         }
-        if (!InBounds({ src.x, src.y - y_vel })) {
+        if (src.y - y_vel < 0) {
             src_neighbours[ND_UP] = { src.x, src.y - 1 };
-            if (!InBounds({ src.x - x_vel, src.y - y_vel }))
+            if (src.x - x_vel < 0)
                 src_neighbours[ND_UP_LEFT] = { src.x - 1, src.y - 1 };
-            if (!InBounds({ src.x + x_vel, src.y - y_vel }))
+            if (src.x + x_vel >= tile_size)
                 src_neighbours[ND_UP_RIGHT] = { src.x + 1, src.y - 1 };
         }
-        if (!InBounds({ src.x, src.y + y_vel })) {
+        if (src.y + y_vel >= tile_size) {
             src_neighbours[ND_DOWN] = { src.x, src.y + 1 };
-            if (!InBounds({ src.x - x_vel, src.y + x_vel }))
+            if (src.x - x_vel < 0 ) 
                 src_neighbours[ND_DOWN_LEFT] = { src.x - 1, src.y + 1 }; 
-            if (!InBounds({ src.x + x_vel, src.y + y_vel }))
+            if (src.x + x_vel >= tile_size)
                 src_neighbours[ND_DOWN_RIGHT] = { src.x + 1, src.y + 1 };
         } 
 
@@ -582,6 +584,7 @@ public:
 
         if (simulated_cell_count == 0 && simulated_previous == 0) {
             UpdateZoneRectangle();
+            d_rec = d_rec_w;
             return;
         }
         simulated_previous = simulated_cell_count;
