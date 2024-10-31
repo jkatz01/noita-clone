@@ -20,6 +20,7 @@ public:
 	float pixel_size	= 8;
 
 	int tile_number		= tiles_width * tiles_height;
+	Camera2D *camera; //TODO: maybe the camera should be kept inside the SandWorld?
 
 	size_t seed = 7000;
 	size_t frame_counter = 0;
@@ -34,7 +35,7 @@ public:
 
 	
 
-	SandWorld(int _world_size, int _screen_width, int _screen_height, int _tiles_width, int _tiles_height) {
+	SandWorld(int _world_size, int _screen_width, int _screen_height, int _tiles_width, int _tiles_height, Camera2D *cam) {
 		world_size = _world_size;
 		screen_width = _screen_width;
 		screen_height = _screen_height;
@@ -47,6 +48,8 @@ public:
 		pixel_size = std::max(screen_width, screen_height) / world_size;
 		tile_number = tiles_width * tiles_height;
 
+		camera = cam;
+
 		world_tiles.reserve(tile_number);
 		tile_color_buffers.reserve(tile_number);
 	}
@@ -56,9 +59,12 @@ public:
 	}
 	IntVector CursorToWorld(IntVector screen_pos) {
 		// Screen mouse position -> Grid scaled mouse position
-		if (!MouseInBounds(screen_pos)) {
-			return {0, 0};
-		}
+		// potentially GetScreenToWorld2D ??
+		Vector2 the = GetScreenToWorld2D(screen_pos.toVector2(), *camera);
+		screen_pos = {(int)the.x, (int)the.y};
+		
+		if (screen_pos.x < 0) screen_pos.x = 0;
+		if (screen_pos.y < 0) screen_pos.y = 0;
 		if (screen_pos.x >= world_size * pixel_size) screen_pos.x = world_size * pixel_size;
 		if (screen_pos.y >= world_size * pixel_size) screen_pos.y = world_size * pixel_size;
 
@@ -69,6 +75,9 @@ public:
 		// Grid scaled mouse position -> tile position
 		grid_pos.x /= tile_size;
 		grid_pos.y /= tile_size;
+
+		if (grid_pos.x >= tiles_width) grid_pos.x = tiles_width - 1;
+		if (grid_pos.y >= tiles_height) grid_pos.y = tiles_height - 1;
 
 		return grid_pos;
 	}
@@ -256,7 +265,7 @@ public:
 		snprintf(tile_cell_count, 10, "%d", tile->simulated_cell_count);
 		DrawTextEx(font, tile_cell_count, { 50, float(50 + font.baseSize * 4 ) }, font.baseSize, 0, col);
 
-		DrawCircleLines((int)GetMouseX(), (int)GetMouseY(), (brush_size+1) / 2 * pixel_size, col);
+		DrawCircleLines((int)GetMouseX(), (int)GetMouseY(), (brush_size+1) / 2 * pixel_size * camera->zoom, col);
 	}
 
 	void AddMaterialSingleInWorld(IntVector world_pos, ParticleType m_type) {

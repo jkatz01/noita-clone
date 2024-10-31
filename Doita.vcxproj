@@ -127,6 +127,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\CameraController.cpp" />
     <ClCompile Include="src\NeighbourTD.cpp" />
     <ClCompile Include="src\IntVector.h" />
     <ClCompile Include="src\RandomRange.cpp" />
