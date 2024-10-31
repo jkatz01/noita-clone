@@ -9,9 +9,10 @@
 
 #define WATER_BLUE       CLITERAL(Color){ 50, 171, 251, 150 } 
 #define WATER_BLUE_2     CLITERAL(Color){ 0, 101, 221, 130 } 
+#define EMPTY_COLOR      CLITERAL(Color){ 0, 0, 0, 100 }
 
 const float w_gravity = 0.2f;
-const float w_drag = 1;
+const float w_drag = 2;
 
 enum ParticleType {
     EMPTY = 0,
@@ -70,7 +71,7 @@ struct ParticleColors {
 };
 
 static const ParticleColors color_ref[PARTICLE_TYPE_COUNT] = {
-    {{ 0, 0, 0, 100 }, 0, 0, WHITE}, //empty
+    {EMPTY_COLOR, 0, 0, WHITE}, //empty
     {DARKBROWN, -0.3f, 0.1f, WHITE}, //stone
     {GREEN, -0.3f, 0.3f, WHITE}, //down
     {BROWN, -0.3f, 0.3f, WHITE}, //sand

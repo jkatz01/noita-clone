@@ -5,11 +5,11 @@
 SandWorld* world;
 
 int main() {
-	world = new SandWorld(200, 800, 4);
+	world = new SandWorld(800, 1920, 1080, 6, 4);
 
-	InitWindow(world->screen_size, world->screen_size, "World");
+	InitWindow(1920, 1080, "World");
 	SetTraceLogLevel(LOG_WARNING);
-	SetTargetFPS(60);
+	//SetTargetFPS(60);
 
 	world->MakeMultiTileWorld();
 	world->AllocateImageTileBuffers();
@@ -20,7 +20,7 @@ int main() {
 	Image buddyworld = LoadImage("assets/buddyworld.png");
 	//ImageCrop(&buddyworld, (Rectangle){ 100, 10, 280, 380 });      // Crop an image piece
 	//ImageFlipHorizontal(&buddyworld);                              // Flip cropped image horizontally
-	ImageResize(&buddyworld, 800, 800);                            // Resize flipped-cropped image
+	ImageResize(&buddyworld, 1920, 1080);                            // Resize flipped-cropped image
 	Texture2D bg_texture = LoadTextureFromImage(buddyworld);
 	UnloadImage(buddyworld);
 

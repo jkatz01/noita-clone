@@ -11,14 +11,15 @@ class SandWorld {
 public:
 	// Currently the world is just one tile
 
-	int world_size		 = 100;
-	int tile_size		 = 100; // must match the SandTile size
-	int screen_size		 = 800;
-	int scaled_size		 = screen_size / tile_size;
-	int tiles_width		 = 1;
-	int tiles_height     = tiles_width;
-	int pixel_size		 = scaled_size;
-	int tile_number		 = tiles_width * tiles_height;
+	int world_size		= 100;
+	int tile_size		= 100; // must match the SandTile size
+	int screen_width	= 800;
+	int screen_height	= 800;
+	int tiles_width		= 1;
+	int tiles_height	= tiles_width;
+	float pixel_size	= 8;
+
+	int tile_number		= tiles_width * tiles_height;
 
 	size_t seed = 7000;
 	size_t frame_counter = 0;
@@ -33,16 +34,17 @@ public:
 
 	
 
-	SandWorld(int _world_size, int _screen_size, int _tiles_width) {
+	SandWorld(int _world_size, int _screen_width, int _screen_height, int _tiles_width, int _tiles_height) {
 		world_size = _world_size;
-		screen_size = _screen_size;
+		screen_width = _screen_width;
+		screen_height = _screen_height;
+
 		tiles_width = _tiles_width;
-		tiles_height = tiles_width;
+		tiles_height = _tiles_height;
 
 
 		tile_size = world_size / tiles_width;
-		scaled_size = screen_size / world_size;
-		pixel_size = scaled_size;
+		pixel_size = std::max(screen_width, screen_height) / world_size;
 		tile_number = tiles_width * tiles_height;
 
 		world_tiles.reserve(tile_number);
@@ -50,20 +52,24 @@ public:
 	}
 
 	bool MouseInBounds(IntVector pos) {
-		return ((pos.x >= 0 && pos.x < screen_size) && (pos.y >= 0 && pos.y < screen_size));
+		return ((pos.x >= 0 && pos.x < screen_width) && (pos.y >= 0 && pos.y < screen_height));
 	}
 	IntVector CursorToWorld(IntVector screen_pos) {
 		// Screen mouse position -> Grid scaled mouse position
 		if (!MouseInBounds(screen_pos)) {
 			return {0, 0};
 		}
-		IntVector new_pos = { screen_pos.x / pixel_size, screen_pos.y / pixel_size };
+		if (screen_pos.x >= world_size * pixel_size) screen_pos.x = world_size * pixel_size;
+		if (screen_pos.y >= world_size * pixel_size) screen_pos.y = world_size * pixel_size;
+
+		IntVector new_pos = { (int)(screen_pos.x / pixel_size), (int)(screen_pos.y / pixel_size) };
 		return new_pos;
 	}
 	IntVector CursorToTile(IntVector grid_pos) {
 		// Grid scaled mouse position -> tile position
 		grid_pos.x /= tile_size;
 		grid_pos.y /= tile_size;
+
 		return grid_pos;
 	}
 	IntVector CursorToInnerPosition(IntVector grid_pos, IntVector tile_pos) {
@@ -197,7 +203,7 @@ public:
 		DrawTileImages();
 
 		DrawEmptyTiles();
-		//DrawTileBoundaries();
+		DrawTileBoundaries();
 		DrawDirtyRecs();
 		
 
@@ -215,6 +221,9 @@ public:
 	}
 
 	SandTile* GetTileFromPos(IntVector tile_pos) {
+		if (tile_pos.x >= tiles_width) tile_pos.x = tiles_width - 1;
+		if (tile_pos.y >= tiles_height) tile_pos.y = tiles_height - 1;
+
 		int tile_index = tile_pos.x % tiles_width + tile_pos.y * tiles_width;
 		if (world_tiles[tile_index] != nullptr) {
 			return world_tiles[tile_index];
