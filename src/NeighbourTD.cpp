@@ -53,10 +53,10 @@ IntVector TranslateParticleToNeighbour(IntVector pos, int tile_size) {
 IntVector VecDifference(IntVector vec1, IntVector vec2) {
     int dx, dy;
     dx = (vec1.x - vec2.x);
-    dx = (abs(dx)/* - 1*/) * NTDsignumInverted((int)dx);
+    dx = (abs(dx) - 1) * NTDsignumInverted((int)dx);
 
     dy = (vec1.y - vec2.y);
-    dy = (abs(dy)/* - 1*/) * NTDsignumInverted((int)dy);
+    dy = (abs(dy) - 1) * NTDsignumInverted((int)dy);
 
     return { dx, dy };
 }

@@ -4,26 +4,26 @@
 #include "CameraController.cpp"
 
 int main() {
-	const int screen_width = 1920;
-	const int screen_height = 920;
+	const int screen_width = 1200;
+	const int screen_height = 800;
+	const int world_width = 600;
+	const int world_height = 300;
 
 	InitWindow(screen_width, screen_height, "World");
 	SetTraceLogLevel(LOG_WARNING);
-	//SetTargetFPS(60);
+	SetTargetFPS(60);
 
-	CameraController world_cam(screen_width, screen_height);
+	CameraController world_cam(screen_width, screen_height, world_width, world_height);
+	SandWorld world(world_width, world_height, 6, &world_cam.camera);
 
-	SandWorld world(640, screen_width, screen_height, 8, 4, &world_cam.camera);
 	world.MakeMultiTileWorld();
 	world.AllocateImageTileBuffers();
 
 	Font font = LoadFontEx("assets/PERB____.ttf", 48, 0, 0);
 	SetTextureFilter(font.texture, TEXTURE_FILTER_TRILINEAR);
 
-	Image buddyworld = LoadImage("assets/buddyworld.png");
-	//ImageCrop(&buddyworld, (Rectangle){ 100, 10, 280, 380 });      // Crop an image piece
-	//ImageFlipHorizontal(&buddyworld);                              // Flip cropped image horizontally
-	ImageResize(&buddyworld, screen_width, screen_height);                            // Resize flipped-cropped image
+	Image buddyworld = LoadImage("assets/beautifu.png");
+	ImageResize(&buddyworld, world_width, world_height); 
 	Texture2D bg_texture = LoadTextureFromImage(buddyworld);
 	UnloadImage(buddyworld);
 
@@ -45,6 +45,7 @@ int main() {
 
 		world.DrawFps({245, 50, 180, 255}, font);
 		world.DrawInfoStuff({ 245, 50, 180, 255 }, font);
+		//DrawTextEx(font, "PRESS R TO MORE SAND", {500.0f, 500.0f}, font.baseSize,0, WHITE);
 
 		EndDrawing();
 	}

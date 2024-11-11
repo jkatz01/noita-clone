@@ -11,13 +11,12 @@ class SandWorld {
 public:
 	// Currently the world is just one tile
 
-	int world_size		= 100;
-	int tile_size		= 100; // must match the SandTile size
-	int screen_width	= 800;
-	int screen_height	= 800;
+	int world_width		= 100;
+	int world_height	= 100;
+
+	int tile_size		= 100;
 	int tiles_width		= 1;
 	int tiles_height	= tiles_width;
-	float pixel_size	= 8;
 
 	int tile_number		= tiles_width * tiles_height;
 	Camera2D *camera; //TODO: maybe the camera should be kept inside the SandWorld?
@@ -35,27 +34,28 @@ public:
 
 	
 
-	SandWorld(int _world_size, int _screen_width, int _screen_height, int _tiles_width, int _tiles_height, Camera2D *cam) {
-		world_size = _world_size;
-		screen_width = _screen_width;
-		screen_height = _screen_height;
-
+	SandWorld(int _world_width, int _world_height, int _tiles_width, Camera2D *cam) {
+		world_width = _world_width;
+		world_height = _world_height;
 		tiles_width = _tiles_width;
-		tiles_height = _tiles_height;
 
+		if (world_width % tiles_width != 0) {
+			world_width = (world_width / tiles_width) * tiles_width;
+		}
+		tile_size = world_width / tiles_width;
+		if (world_height % tile_size != 0) {
+			world_height = (world_height / tile_size) * tile_size;
+		}
+		tiles_height = world_height / tile_size;
 
-		tile_size = world_size / tiles_width;
-		pixel_size = std::max(screen_width, screen_height) / world_size;
 		tile_number = tiles_width * tiles_height;
-
 		camera = cam;
-
 		world_tiles.reserve(tile_number);
 		tile_color_buffers.reserve(tile_number);
 	}
 
 	bool MouseInBounds(IntVector pos) {
-		return ((pos.x >= 0 && pos.x < screen_width) && (pos.y >= 0 && pos.y < screen_height));
+		return ( (pos.x >= 0 && pos.x < GetScreenWidth()) && (pos.y >= 0 && pos.y < GetScreenHeight()) );
 	}
 	IntVector CursorToWorld(IntVector screen_pos) {
 		// Screen mouse position -> Grid scaled mouse position
@@ -65,10 +65,10 @@ public:
 		
 		if (screen_pos.x < 0) screen_pos.x = 0;
 		if (screen_pos.y < 0) screen_pos.y = 0;
-		if (screen_pos.x >= world_size * pixel_size) screen_pos.x = world_size * pixel_size;
-		if (screen_pos.y >= world_size * pixel_size) screen_pos.y = world_size * pixel_size;
+		if (screen_pos.x >= world_width ) screen_pos.x = world_width;
+		if (screen_pos.y >= world_height ) screen_pos.y = world_height;
 
-		IntVector new_pos = { (int)(screen_pos.x / pixel_size), (int)(screen_pos.y / pixel_size) };
+		IntVector new_pos = { (int)(screen_pos.x ), (int)(screen_pos.y ) };
 		return new_pos;
 	}
 	IntVector CursorToTile(IntVector grid_pos) {
@@ -163,9 +163,7 @@ public:
 			Image img = MakeTileImage(world_tiles[i], tile_color_buffers[i]);
 			textures.push_back(LoadTextureFromImage(img));
 			IntVector pos = VectorFromIndex(i);
-			DrawTextureEx(textures.back(), Vector2{(float)(world_tiles[i]->position.x * tile_size) * pixel_size,
-				(float)(world_tiles[i]->position.y * tile_size) * pixel_size},
-				0, pixel_size, WHITE);
+			DrawTexture(textures.back(), (world_tiles[i]->position.x * tile_size), (world_tiles[i]->position.y * tile_size), WHITE);
 		}
 		
 	}
@@ -174,9 +172,9 @@ public:
 	void DrawTileBoundaries() {
 		for (SandTile* tile : world_tiles) {
 			DrawRectangleLines(
-				(tile->position.x * tile_size) * pixel_size,
-				(tile->position.y * tile_size) * pixel_size,
-				tile_size * pixel_size, tile_size * pixel_size, RED);
+				(tile->position.x * tile_size) ,
+				(tile->position.y * tile_size) ,
+				tile_size , tile_size , RED);
 		}
 	}
 
@@ -184,9 +182,9 @@ public:
 		for (SandTile* tile : world_tiles) {
 			if (tile->simulated_cell_count == 0) {
 				DrawRectangle(
-					(tile->position.x * tile_size) * pixel_size,
-					(tile->position.y * tile_size) * pixel_size,
-					tile_size * pixel_size, tile_size * pixel_size, Color{ 0, 0, 0, 150 });
+					(tile->position.x * tile_size) ,
+					(tile->position.y * tile_size) ,
+					tile_size , tile_size , Color{ 0, 0, 0, 150 });
 			}
 		}
 	}
@@ -195,10 +193,10 @@ public:
 		for (SandTile* tile : world_tiles) {
 			if (tile->simulated_cell_count != 0) {
 				DrawRectangleLines(
-					(tile->position.x * tile_size + tile->d_rec.min.x) * pixel_size,
-					(tile->position.y * tile_size + tile->d_rec.min.y) * pixel_size,
-					(tile->d_rec.max.x - tile->d_rec.min.x + 1) * pixel_size,
-					(tile->d_rec.max.y - tile->d_rec.min.y + 1) * pixel_size,
+					(tile->position.x * tile_size + tile->d_rec.min.x) ,
+					(tile->position.y * tile_size + tile->d_rec.min.y) ,
+					(tile->d_rec.max.x - tile->d_rec.min.x + 1) ,
+					(tile->d_rec.max.y - tile->d_rec.min.y + 1) ,
 					GREEN);
 			}
 		}
@@ -265,7 +263,7 @@ public:
 		snprintf(tile_cell_count, 10, "%d", tile->simulated_cell_count);
 		DrawTextEx(font, tile_cell_count, { 50, float(50 + font.baseSize * 4 ) }, font.baseSize, 0, col);
 
-		DrawCircleLines((int)GetMouseX(), (int)GetMouseY(), (brush_size+1) / 2 * pixel_size * camera->zoom, col);
+		DrawCircleLines((int)GetMouseX(), (int)GetMouseY(), (brush_size+1) / 2  * camera->zoom, col);
 	}
 
 	void AddMaterialSingleInWorld(IntVector world_pos, ParticleType m_type) {

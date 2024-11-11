@@ -59,7 +59,7 @@ static const ParticleParams param_ref[PARTICLE_TYPE_COUNT] = {
     {&MT_STATIC,     2,    1,     0,    0,  "stone"},       // STONE
     {&MT_DOWN_ONLY,  2,    1,     1,    1,  "down_only"},   // DOWN
     {&MT_POWDER,     2,    0,     1,    5,  "sand"},        // SAND
-    {&MT_LIQUID,     1,    1,     1,    5,  "water"},       // WATER
+    {&MT_LIQUID,     1,    2,     1,    5,  "water"},       // WATER
     {&MT_GAS,        0,    1, -0.5f,    1,  "steam"}       // STEAM
 };
 

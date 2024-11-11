@@ -148,7 +148,6 @@ public:
         return param_ref[t].movement_type;
     }
 
-
     Particle* GetParticleAt(IntVector pos) {
         if (!InBounds(pos)) {
             return nullptr;
@@ -161,6 +160,17 @@ public:
         return (x > 0) - (x < 0);
     }
 
+    int ClampInt(int num, int low, int high) {
+        if (num < low) return low;
+        if (num > high) return high;
+        return num;
+    }
+
+    int ClampInTile(int num) {
+        if (num < 0) return 0;
+        if (num > tile_size - 1) return tile_size - 1;
+        return num;
+    }
 
     // Returns {-1, -1} if false
     NeighbourTD ReplacePositionWithNeighbourTile(IntVector pos, Particle* p) {
@@ -184,7 +194,6 @@ public:
         }
         return ND_MYSELF;
     }
-
 
     // Returns translated position if moved to a neighbour
     IntVector MoveVelocity(IntVector pos, Vector2 vel, NeighbourTD *neighbour_moved_to) {
@@ -264,6 +273,7 @@ public:
         }
         return false;
     }
+
     bool CanReplaceParticleN(Particle *p_src, IntVector v_dst) {
         if (!InBounds(v_dst)) {
             return false;
@@ -340,7 +350,6 @@ public:
         //    tile_neighbours[n_moved_to]->MoveInFrameByDifference(end_pos, GetParticleAt(end_pos), diff);
         //}
     }
-
 
     void GetNewParticleVelocity(IntVector pos, Particle* p) {
         const std::vector<Vector2>* mv = GetMovementDirections(p->type);
@@ -468,17 +477,6 @@ public:
             }
         }
         update_draws.clear();
-    }
-
-    int ClampInt(int num, int low, int high) {
-        if (num < low) return low;
-        if (num > high) return high;
-        return num;
-    }
-    int ClampInTile(int num) {
-        if (num < 0) return 0;
-        if (num > tile_size - 1) return tile_size - 1;
-        return num;
     }
 
     void UpdateNeighbourZones(IntVector src) {
