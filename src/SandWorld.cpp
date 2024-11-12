@@ -20,19 +20,16 @@ public:
 
 	int tile_number		= tiles_width * tiles_height;
 	Camera2D *camera; //TODO: maybe the camera should be kept inside the SandWorld?
+	Rectangle gui_bounds = {0};
 
 	size_t seed = 7000;
 	size_t frame_counter = 0;
 
 	ParticleType brush_choice = SAND;
-	int			 brush_size = 1;
+	int			 brush_size = 2;
 
 	std::vector<SandTile*> world_tiles; //fixed world size for now, otherwise the indexing can get wrong
-	SandTile* first_tile = nullptr;
-
 	std::vector<Color*> tile_color_buffers;
-
-	
 
 	SandWorld(int _world_width, int _world_height, int _tiles_width, Camera2D *cam) {
 		world_width = _world_width;
@@ -56,6 +53,9 @@ public:
 
 	bool MouseInBounds(IntVector pos) {
 		return ( (pos.x >= 0 && pos.x < GetScreenWidth()) && (pos.y >= 0 && pos.y < GetScreenHeight()) );
+	}
+	bool MouseInGuiBounds(IntVector pos) {
+		return ( (pos.x >= gui_bounds.x && pos.x < gui_bounds.x + gui_bounds.width) && (pos.y >= gui_bounds.y && pos.y < gui_bounds.y + gui_bounds.height) );
 	}
 	IntVector CursorToWorld(IntVector screen_pos) {
 		// Screen mouse position -> Grid scaled mouse position
@@ -316,11 +316,20 @@ public:
 		}
 		IntVector scaled_pos = CursorToWorld({ GetMouseX(), GetMouseY() });
 		IntVector tile_pos = CursorToTile(scaled_pos);
-
 		SandTile* tile = GetTileFromPos(tile_pos);
 
 		static int mouse_held = 0;
 		static IntVector prev_pos = scaled_pos;
+
+		if ( !CursorInWorldBounds(scaled_pos) || MouseInGuiBounds({ GetMouseX(), GetMouseY() }) ) {
+			mouse_held = 0;
+			return;
+		}
+		Vector2 the = GetScreenToWorld2D({ (float)GetMouseX(), (float)GetMouseY() }, *camera);
+		if (the.x < 0 || the.y < 0) {
+			mouse_held = 0;
+			return;
+		}
 
 		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
 			AddMaterialCircleInWorld(scaled_pos, brush_size, brush_choice);
@@ -365,5 +374,15 @@ public:
 				brush_size = 2;
 			}
 		}
+	}
+
+	void SetBrushMaterial(ParticleType type) {
+		brush_choice = type;
+	}
+	void SetBrushSize(int size) {
+		if (size < 2) {
+			size = 2;
+		}
+		brush_size = size;
 	}
 };
