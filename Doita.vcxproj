@@ -151,6 +151,10 @@
     <Font Include="assets\PERB____.TTF" />
     <Font Include="assets\PERI____.TTF" />
     <Font Include="assets\PER_____.TTF" />
+    <Font Include="assets\Westington.ttf" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="assets\style_cherry.rgs" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

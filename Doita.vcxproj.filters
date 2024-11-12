@@ -77,5 +77,13 @@
     <Font Include="assets\PERI____.TTF">
       <Filter>Resource Files</Filter>
     </Font>
+    <Font Include="assets\Westington.ttf">
+      <Filter>Resource Files</Filter>
+    </Font>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="assets\style_cherry.rgs">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

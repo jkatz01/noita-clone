@@ -330,7 +330,6 @@ public:
 			mouse_held = 0;
 			return;
 		}
-
 		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
 			AddMaterialCircleInWorld(scaled_pos, brush_size, brush_choice);
 			if (mouse_held) {

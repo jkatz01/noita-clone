@@ -16,14 +16,21 @@ const int world_height = 300;
 void WorldDrawGui(SandWorld &world) {
 	// slider
 	static float prev_bsize = 2, bsize = 2;
-	if (GuiButton(CLITERAL(Rectangle) { screen_width - 200, 100, 100, 50 }, "Sand")) world.SetBrushMaterial(SAND);
-	if (GuiButton(CLITERAL(Rectangle) { screen_width - 100, 100, 100, 50 }, "Water")) world.SetBrushMaterial(WATER);
-	if (GuiButton(CLITERAL(Rectangle) { screen_width - 200, 150, 100, 50 }, "Stone")) world.SetBrushMaterial(STONE);
-	if (GuiButton(CLITERAL(Rectangle) { screen_width - 100, 150, 100, 50 }, "Steam")) world.SetBrushMaterial(STEAM);
+	if (GuiButton(CLITERAL(Rectangle) { screen_width - 200, 100, 100, 50 }, "SAND")) world.SetBrushMaterial(SAND);
+	if (GuiButton(CLITERAL(Rectangle) { screen_width - 100, 100, 100, 50 }, "WATER")) world.SetBrushMaterial(WATER);
+	if (GuiButton(CLITERAL(Rectangle) { screen_width - 200, 150, 100, 50 }, "STONE")) world.SetBrushMaterial(STONE);
+	if (GuiButton(CLITERAL(Rectangle) { screen_width - 100, 150, 100, 50 }, "STEAM")) world.SetBrushMaterial(STEAM);
 
-	GuiSlider({ screen_width - 200, 50, 200, 50 }, "brush", "", &bsize, 2, 100); //TODO: make slider change if E/R pressed
+	GuiSlider({ screen_width - 200, 50, 200, 50 }, "BRUSH", "", &bsize, 2, 100);
 	if (prev_bsize != bsize) world.SetBrushSize((int)bsize);
+	if (world.brush_size != bsize) bsize = world.brush_size;
 	prev_bsize = bsize;
+}
+
+void ChangeGuiFontSize(int size) {
+	Font gf = GuiGetFont();
+	gf.baseSize = size;
+	GuiSetFont(gf);
 }
 
 int main() {
@@ -38,17 +45,16 @@ int main() {
 	world.AllocateImageTileBuffers();
 	world.gui_bounds = { screen_width - 200, 50, 200, 150 };
 
-	Font font = LoadFontEx("assets/PER_____.ttf", 48, 0, 0);
-	SetTextureFilter(font.texture, TEXTURE_FILTER_TRILINEAR);
-
 	Image buddyworld = LoadImage("assets/beautifu.png");
 	ImageResize(&buddyworld, world_width, world_height); 
 	Texture2D bg_texture = LoadTextureFromImage(buddyworld);
 	UnloadImage(buddyworld);
 
-	Font guifont = GetFontDefault();
-	guifont.baseSize = 4;
-	GuiSetFont(guifont);
+	GuiLoadStyle("assets/style_cherry.rgs");
+	ChangeGuiFontSize(8);
+
+	Font font = LoadFontEx("assets/Westington.ttf", 48, 0, 0);
+	SetTextureFilter(font.texture, TEXTURE_FILTER_TRILINEAR);
 
 	while (!WindowShouldClose()) {
 		BeginDrawing();
@@ -61,8 +67,8 @@ int main() {
 			world.executeFrame();
 		EndMode2D();
 
-		world.DrawFps({245, 50, 180, 255}, font);
-		world.DrawInfoStuff({ 245, 50, 180, 255 }, font);
+		world.DrawFps({225, 115, 115, 255}, font);
+		world.DrawInfoStuff({ 225, 115, 115, 255 }, font);
 		//DrawTextEx(font, "PRESS R TO MORE SAND", {500.0f, 500.0f}, font.baseSize,0, WHITE);
 
 		WorldDrawGui(world);
