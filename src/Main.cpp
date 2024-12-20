@@ -51,7 +51,7 @@ int main() {
 	UnloadImage(buddyworld);
 
 	GuiLoadStyle("assets/style_cherry.rgs");
-	ChangeGuiFontSize(8);
+	ChangeGuiFontSize(7);
 
 	Font font = LoadFontEx("assets/Westington.ttf", 48, 0, 0);
 	SetTextureFilter(font.texture, TEXTURE_FILTER_TRILINEAR);

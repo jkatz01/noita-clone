@@ -152,6 +152,7 @@ public:
 		return { buffer, tile_size , tile_size , 1, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8 };
 	}
 
+	//TODO: only unload/update tiles that have changed since the last frame
 	void DrawTileImages() {
 		static std::vector<Texture> textures;
 		for (Texture& t : textures) {
@@ -168,13 +169,12 @@ public:
 		
 	}
 
-
 	void DrawTileBoundaries() {
 		for (SandTile* tile : world_tiles) {
 			DrawRectangleLines(
-				(tile->position.x * tile_size) ,
-				(tile->position.y * tile_size) ,
-				tile_size , tile_size , RED);
+				(tile->position.x * tile_size),
+				(tile->position.y * tile_size),
+				tile_size + 1, tile_size + 1, RED);
 		}
 	}
 
@@ -182,8 +182,8 @@ public:
 		for (SandTile* tile : world_tiles) {
 			if (tile->simulated_cell_count == 0) {
 				DrawRectangle(
-					(tile->position.x * tile_size) ,
-					(tile->position.y * tile_size) ,
+					(tile->position.x * tile_size),
+					(tile->position.y * tile_size),
 					tile_size , tile_size , Color{ 0, 0, 0, 150 });
 			}
 		}
