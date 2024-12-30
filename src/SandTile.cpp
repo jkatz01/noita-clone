@@ -353,6 +353,9 @@ public:
 
     void GetNewParticleVelocity(IntVector pos, Particle* p) {
         const std::vector<Vector2>* mv = GetMovementDirections(p->type);
+        if (p->is_freefalling == 0) {
+            mv = &MT_DOWN_ONLY;
+        }
         for (Vector2 dir : *mv) {
             IntVector new_pos = { pos.x + (int)dir.x, pos.y + (int)dir.y };
 
@@ -398,6 +401,16 @@ public:
             p->should_update = 1;
             return;
         }
+
+        // if freefalling move anywhere
+        // if not, move down only
+        
+        if (p->is_freefalling == 1) {
+            p->colour = BLUE;
+        }
+        else {
+            p->colour = RED;
+        }
             
         if (AbsVelocityLessThan(1, p)) { 
             GetNewParticleVelocity(pos, p);
@@ -409,7 +422,9 @@ public:
         ApplyGravity(p);
 
         // Apply more rules
-
+        
+        p->is_freefalling = 0;
+        // move function will set freefalling to 1 if something has moved ?
         MoveAndQueueParticle(pos, p);
         
     }
@@ -431,6 +446,10 @@ public:
         grid[index(src)] = *GetParticleAt(dst);
         grid[index(dst)] = temp;
 
+        grid[index(src)].is_freefalling = 1;
+        grid[index(dst)].is_freefalling = 1;
+
+
         UpdateSimZone(src);
         UpdateSimZone(dst);
         // need to notify neighbour if an update happened on the border
@@ -451,7 +470,7 @@ public:
             if (the->type == new_p.type) {
                 ParticleType tp = new_p.type;
                 std::cout << "FUSION!!!" << std::endl; //shouldnt even get here 
-                new_p.colour = BLUE;
+                new_p.colour = GREEN;
             }
         }
         UpdateSimZone(dst);

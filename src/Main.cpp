@@ -36,7 +36,7 @@ void ChangeGuiFontSize(int size) {
 int main() {
 	InitWindow(screen_width, screen_height, "World");
 	SetTraceLogLevel(LOG_WARNING);
-	SetTargetFPS(60);
+	SetTargetFPS(5);
 
 	CameraController world_cam(screen_width, screen_height, world_width, world_height);
 	

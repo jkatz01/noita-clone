@@ -241,6 +241,7 @@ public:
 	void DrawInfoStuff(Color col, Font font) {
 		IntVector scaled_pos = CursorToWorld({ GetMouseX(), GetMouseY() });
 		IntVector tile_pos = CursorToTile(scaled_pos);
+		IntVector inner_pos = CursorToInnerPosition(scaled_pos, tile_pos);
 
 		char mouse_pos[100];
 		snprintf(mouse_pos, 100, "X: %d, Y: %d", GetMouseX(), GetMouseY());
@@ -262,6 +263,12 @@ public:
 		char tile_cell_count[10];
 		snprintf(tile_cell_count, 10, "%d", tile->simulated_cell_count);
 		DrawTextEx(font, tile_cell_count, { 50, float(50 + font.baseSize * 4 ) }, font.baseSize, 0, col);
+
+		char sand_vel[100];
+		snprintf(sand_vel, 100, "X: %f, Y: %f",
+				tile->grid[tile->index(inner_pos)].velocity.x,
+				tile->grid[tile->index(inner_pos)].velocity.y);
+		DrawTextEx(font, sand_vel, { 50, float(50 + font.baseSize * 5) }, font.baseSize, 0, col);
 
 		DrawCircleLines((int)GetMouseX(), (int)GetMouseY(), (brush_size+1) / 2  * camera->zoom, col);
 	}
