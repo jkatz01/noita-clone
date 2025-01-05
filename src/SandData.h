@@ -36,7 +36,7 @@ Color GenerateParticleColor(ParticleType type);
 // Movement Directions
 static const std::vector<Vector2> MT_STATIC      = { {0, 0} };
 static const std::vector<Vector2> MT_DOWN_ONLY   = { {0, 1} };
-static const std::vector<Vector2> MT_POWDER      = { {-1, 1}, {1, 1}, {0, 1} };
+static const std::vector<Vector2> MT_POWDER      = { {0, 1}, {-1, 1}, {1, 1} };
 static const std::vector<Vector2> MT_LIQUID      = { {0, 1}, {-1, 1}, {1, 1}, {-1, 0}, {1, 0} };
 static const std::vector<Vector2> MT_GAS         = { {0, -1}, {-1, -1}, {1, -1}, {-1, 0}, {1, 0} };
 static const std::vector<Vector2> MT_CRAZY       = { {-5, -5}, {5, -5}, {5, 5}, {-5, 0}, {5, 0}, {0, -5}, {0, 5}, {-5, 5},};

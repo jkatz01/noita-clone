@@ -31,6 +31,7 @@ public:
 	std::vector<SandTile*> world_tiles; //fixed world size for now, otherwise the indexing can get wrong
 	std::vector<Color*> tile_color_buffers;
 
+	// TODO: tile size should be a power of 2, not something custom decided by the world size
 	SandWorld(int _world_width, int _world_height, int _tiles_width, Camera2D *cam) {
 		world_width = _world_width;
 		world_height = _world_height;
@@ -54,11 +55,13 @@ public:
 	bool MouseInBounds(IntVector pos) {
 		return ( (pos.x >= 0 && pos.x < GetScreenWidth()) && (pos.y >= 0 && pos.y < GetScreenHeight()) );
 	}
+
 	bool MouseInGuiBounds(IntVector pos) {
 		return ( (pos.x >= gui_bounds.x && pos.x < gui_bounds.x + gui_bounds.width) && (pos.y >= gui_bounds.y && pos.y < gui_bounds.y + gui_bounds.height) );
 	}
+
+	// Screen mouse position -> Grid scaled mouse position
 	IntVector CursorToWorld(IntVector screen_pos) {
-		// Screen mouse position -> Grid scaled mouse position
 		// potentially GetScreenToWorld2D ??
 		Vector2 the = GetScreenToWorld2D(screen_pos.toVector2(), *camera);
 		screen_pos = {(int)the.x, (int)the.y};
@@ -71,8 +74,9 @@ public:
 		IntVector new_pos = { (int)(screen_pos.x ), (int)(screen_pos.y ) };
 		return new_pos;
 	}
+
+	// Grid scaled mouse position -> tile position
 	IntVector CursorToTile(IntVector grid_pos) {
-		// Grid scaled mouse position -> tile position
 		grid_pos.x /= tile_size;
 		grid_pos.y /= tile_size;
 
@@ -81,8 +85,9 @@ public:
 
 		return grid_pos;
 	}
+
+	//Grid scaled mouse position + Tile Position -> Mouse position inside tile
 	IntVector CursorToInnerPosition(IntVector grid_pos, IntVector tile_pos) {
-		//Grid scaled mouse position + Tile Position -> Mouse position inside tile
 		int x = grid_pos.x - (tile_pos.x * tile_size);
 		int y = grid_pos.y - (tile_pos.y * tile_size);
 		return {x, y};
@@ -276,11 +281,17 @@ public:
 	void AddMaterialSingleInWorld(IntVector world_pos, ParticleType m_type) {
 		if (CursorInWorldBounds(world_pos)) {
 			IntVector tile_pos = CursorToTile(world_pos);
+			IntVector inner_pos = CursorToInnerPosition(world_pos, tile_pos);
+
 			if (m_type == EMPTY) {
-				GetTileFromPos(tile_pos)->DeleteMaterialSingle(CursorToInnerPosition(world_pos, tile_pos));
+				GetTileFromPos(tile_pos)->DeleteMaterialSingle(inner_pos);
 			}
 			else {
-				GetTileFromPos(tile_pos)->AddMaterialSingle(CursorToInnerPosition(world_pos, tile_pos), m_type);
+				// random chance
+				if (rand_int(0, 5) < 4) {
+					return;
+				}
+				GetTileFromPos(tile_pos)->AddMaterialSingle(inner_pos, m_type);
 			}
 		}
 	}
