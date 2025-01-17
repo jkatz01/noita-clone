@@ -359,7 +359,7 @@ public:
         if (p->is_freefalling == 0 && mv == &MT_POWDER) {
             mv = &MT_DOWN_ONLY;
         }
-        
+
         for (Vector2 dir : *mv) {
             IntVector new_pos = { pos.x + (int)dir.x, pos.y + (int)dir.y };
 
@@ -392,7 +392,9 @@ public:
             return;
         }
         int sx = signum((int)p->velocity.x);
-        p->velocity.x -= sx * w_drag;
+
+        p->velocity.x -= std::min(sx * w_drag, p->velocity.x);
+        // drag needs to not go past 0
     }
 
     void UpdateParticle(IntVector pos) {
@@ -406,16 +408,15 @@ public:
             return;
         }
 
-        // if freefalling move anywhere
-        // if not, move down only
-        
-        if (p->is_freefalling == 1) {
-            //p->colour = BLUE;
+        /*if (p->is_freefalling == 1) {
+            p->colour = BLUE;
         }
         else {
-            //p->colour = RED;
-        }
+            p->colour = RED;
+        }*/
             
+        // if freefalling move anywhere
+        // if not, move down only  
         if (AbsVelocityLessThan(1, p)) { 
             GetNewParticleVelocity(pos, p);
         }

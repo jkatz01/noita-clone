@@ -59,9 +59,10 @@ static const ParticleParams param_ref[PARTICLE_TYPE_COUNT] = {
     {&MT_STATIC,    -1,    1,     0,    0,  "empty"},       // EMPTY
     {&MT_STATIC,     2,    1,     0,    0,  "stone"},       // STONE
     {&MT_DOWN_ONLY,  2,    1,     1,    1,  "down_only"},   // DOWN
+
     {&MT_POWDER,     2,    0,     1,    5,  "sand"},        // SAND
     {&MT_LIQUID,     1,    2,     1,    5,  "water"},       // WATER
-    {&MT_GAS,        0,    1, -0.5f,    1,  "steam"}       // STEAM
+    {&MT_GAS,        0,    1, -0.5f,    1,  "steam"}        // STEAM
 };
 
 struct ParticleColors {
@@ -72,11 +73,12 @@ struct ParticleColors {
 };
 
 static const ParticleColors color_ref[PARTICLE_TYPE_COUNT] = {
-    {EMPTY_COLOR, 0, 0, WHITE}, //empty
-    {DARKBROWN, -0.3f, 0.1f, WHITE}, //stone
-    {GREEN, -0.3f, 0.3f, WHITE}, //down
-    {BROWN, -0.3f, 0.3f, WHITE}, //sand
-    {WATER_BLUE, 0, 0, WHITE}, //water
-    {BLUE, 0.5f, 0.7f, WHITE} //steam
+    {EMPTY_COLOR, 0, 0, WHITE},      // empty
+    {DARKBROWN, -0.3f, 0.1f, WHITE}, // stone
+    {GREEN, -0.3f, 0.3f, WHITE},     // down
+
+    {BROWN, -0.3f, 0.3f, WHITE},     // sand
+    {WATER_BLUE, 0, 0, WHITE},       // water
+    {BLUE, 0.5f, 0.7f, WHITE}        // steam
 };
 
