@@ -356,8 +356,12 @@ public:
         
         // when a powder is freefalling
         // it should only go down, and not to the sides
-        if (p->is_freefalling == 0 && mv == &MT_POWDER) {
+        if (p->is_freefalling == 1 && mv == &MT_POWDER) {
             mv = &MT_DOWN_ONLY;
+            p->colour = BLUE;
+        }
+        else {
+            p->colour = RED;
         }
 
         for (Vector2 dir : *mv) {
@@ -408,12 +412,12 @@ public:
             return;
         }
 
-        /*if (p->is_freefalling == 1) {
-            p->colour = BLUE;
-        }
-        else {
-            p->colour = RED;
-        }*/
+        //if (p->is_freefalling == 1) {
+        //    p->colour = BLUE;
+        //}
+        //else {
+        //    p->colour = RED;
+        //}
             
         // if freefalling move anywhere
         // if not, move down only  

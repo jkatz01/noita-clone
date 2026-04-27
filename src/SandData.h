@@ -24,7 +24,7 @@ enum ParticleType {
 };
 
 struct Particle {
-    ParticleType type;
+    ParticleType type = DOWN_ONLY;
     Vector2      velocity = { 0, 0 };
     Color        colour = CLITERAL(Color) { 0, 0, 0, 100 };
     short        should_update = 1;

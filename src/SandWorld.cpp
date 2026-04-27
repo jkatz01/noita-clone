@@ -10,13 +10,12 @@
 class SandWorld {
 public:
 	// Currently the world is just one tile
-
-	int world_width		= 100;
-	int world_height	= 100;
+	int world_width = 100;
+	int world_height = 100;
 
 	int tile_size		= 100;
 	int tiles_width		= 1;
-	int tiles_height	= tiles_width;
+	int tiles_height	= 1;
 
 	int tile_number		= tiles_width * tiles_height;
 	Camera2D *camera; //TODO: maybe the camera should be kept inside the SandWorld?
@@ -32,19 +31,14 @@ public:
 	std::vector<Color*> tile_color_buffers;
 
 	// TODO: tile size should be a power of 2, not something custom decided by the world size
-	SandWorld(int _world_width, int _world_height, int _tiles_width, Camera2D *cam) {
-		world_width = _world_width;
-		world_height = _world_height;
-		tiles_width = _tiles_width;
+	SandWorld(int _tiles_horizontal, int _tiles_vertical, int _tile_size, Camera2D *cam) {
+		world_width = _tile_size * _tiles_horizontal;
+		world_height = _tile_size * _tiles_vertical;
+		tiles_width = _tiles_horizontal;
+		tiles_height = _tiles_vertical;
 
-		if (world_width % tiles_width != 0) {
-			world_width = (world_width / tiles_width) * tiles_width;
-		}
-		tile_size = world_width / tiles_width;
-		if (world_height % tile_size != 0) {
-			world_height = (world_height / tile_size) * tile_size;
-		}
-		tiles_height = world_height / tile_size;
+
+		tile_size = _tile_size;
 
 		tile_number = tiles_width * tiles_height;
 		camera = cam;
@@ -68,8 +62,8 @@ public:
 		
 		if (screen_pos.x < 0) screen_pos.x = 0;
 		if (screen_pos.y < 0) screen_pos.y = 0;
-		if (screen_pos.x >= world_width ) screen_pos.x = world_width;
-		if (screen_pos.y >= world_height ) screen_pos.y = world_height;
+		if (screen_pos.x >= world_width ) screen_pos.x = world_width - 1;
+		if (screen_pos.y >= world_height ) screen_pos.y = world_height - 1;
 
 		IntVector new_pos = { (int)(screen_pos.x ), (int)(screen_pos.y ) };
 		return new_pos;
@@ -179,7 +173,7 @@ public:
 			DrawRectangleLines(
 				(tile->position.x * tile_size),
 				(tile->position.y * tile_size),
-				tile_size + 1, tile_size + 1, RED);
+				tile_size, tile_size, RED);
 		}
 	}
 
@@ -257,23 +251,27 @@ public:
 		DrawTextEx(font, mouse_pos_s, { 50, float(50 + font.baseSize * 1) }, font.baseSize, 0, col);
 
 		char tile_num[20];
-		snprintf(tile_num, 20, "Tile: %d, %d", tile_pos.x, tile_pos.y);
+		snprintf(tile_num, 20, "X: %d, Y: %d", tile_pos.x, tile_pos.y);
 		DrawTextEx(font, tile_num, { 50, float(50 + font.baseSize * 2 ) }, font.baseSize, 0, col);
+
+		char inner_num[20];
+		snprintf(inner_num, 20, "Tile: %d, %d", inner_pos.x, inner_pos.y);
+		DrawTextEx(font, inner_num, { 50, float(50 + font.baseSize * 3) }, font.baseSize, 0, col);
 
 		char brush[10];
 		snprintf(brush, 10, param_ref[brush_choice].type_name.c_str(), 1);
-		DrawTextEx(font, brush, { 50, float(50 + font.baseSize * 3 ) }, font.baseSize, 0, col);
+		DrawTextEx(font, brush, { 50, float(50 + font.baseSize * 4 ) }, font.baseSize, 0, col);
 
 		SandTile* tile = GetTileFromPos(tile_pos);
 		char tile_cell_count[10];
 		snprintf(tile_cell_count, 10, "%d", tile->simulated_cell_count);
-		DrawTextEx(font, tile_cell_count, { 50, float(50 + font.baseSize * 4 ) }, font.baseSize, 0, col);
+		DrawTextEx(font, tile_cell_count, { 50, float(50 + font.baseSize * 5 ) }, font.baseSize, 0, col);
 
 		char sand_vel[100];
 		snprintf(sand_vel, 100, "X: %f, Y: %f",
 				tile->grid[tile->index(inner_pos)].velocity.x,
 				tile->grid[tile->index(inner_pos)].velocity.y);
-		DrawTextEx(font, sand_vel, { 50, float(50 + font.baseSize * 5) }, font.baseSize, 0, col);
+		DrawTextEx(font, sand_vel, { 50, float(50 + font.baseSize * 6) }, font.baseSize, 0, col);
 
 		DrawCircleLines((int)GetMouseX(), (int)GetMouseY(), (brush_size+1) / 2  * camera->zoom, col);
 	}

@@ -10,8 +10,9 @@
 
 const int screen_width = 1400;
 const int screen_height = 1000;
-const int world_width = 600;
-const int world_height = 300;
+const int world_width = 6;
+const int world_height = 3;
+const int tile_size = 256;
 
 void WorldDrawGui(SandWorld &world) {
 	// slider
@@ -38,15 +39,15 @@ int main() {
 	SetTraceLogLevel(LOG_WARNING);
 	SetTargetFPS(60);
 
-	CameraController world_cam(screen_width, screen_height, world_width, world_height);
+	CameraController world_cam(screen_width, screen_height, world_width * tile_size, world_height * tile_size);
 	
-	SandWorld world(world_width, world_height, 6, &world_cam.camera);
+	SandWorld world(world_width, world_height, tile_size, &world_cam.camera);
 	world.MakeMultiTileWorld();
 	world.AllocateImageTileBuffers();
 	world.gui_bounds = { screen_width - 200, 50, 200, 150 };
 
 	Image buddyworld = LoadImage("assets/beautifu.png");
-	ImageResize(&buddyworld, world_width, world_height); 
+	ImageResize(&buddyworld, world_width * tile_size, world_height * tile_size);
 	Texture2D bg_texture = LoadTextureFromImage(buddyworld);
 	UnloadImage(buddyworld);
 
