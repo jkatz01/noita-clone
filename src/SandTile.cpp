@@ -353,16 +353,16 @@ public:
 
     void GetNewParticleVelocity(IntVector pos, Particle* p) {
         const std::vector<Vector2>* mv = GetMovementDirections(p->type);
-        
         // when a powder is freefalling
         // it should only go down, and not to the sides
-        if (p->is_freefalling == 1 && mv == &MT_POWDER) {
-            mv = &MT_DOWN_ONLY;
-            p->colour = BLUE;
-        }
-        else {
-            p->colour = RED;
-        }
+		
+        // if (p->is_freefalling == 1 && mv == &MT_POWDER) {
+        //     mv = &MT_DOWN_ONLY;
+        //     p->colour = BLUE;
+        // }
+        // else {
+        //     p->colour = RED;
+        // }
 
         for (Vector2 dir : *mv) {
             IntVector new_pos = { pos.x + (int)dir.x, pos.y + (int)dir.y };

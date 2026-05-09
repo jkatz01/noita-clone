@@ -9,6 +9,12 @@
 #include "SandData.h"
 #include "NeighbourTD.h"
 
+struct DebugFlags {
+	bool tileBoundaries;
+	bool emptyTiles;
+	bool dirtyRecs;
+};
+
 class SandWorld {
 public:
 	// Currently the world is just one tile
@@ -31,6 +37,8 @@ public:
 
 	std::vector<SandTile*> world_tiles; //fixed world size for now, otherwise the indexing can get wrong
 	std::vector<Color*> tile_color_buffers;
+
+	DebugFlags *debug_flags;
 
 	// TODO: tile size should be a power of 2, not something custom decided by the world size
 	SandWorld(int _tiles_horizontal, int _tiles_vertical, int _tile_size, Camera2D *cam) {
@@ -171,34 +179,40 @@ public:
 	}
 
 	void DrawTileBoundaries() {
-		for (SandTile* tile : world_tiles) {
-			DrawRectangleLines(
-				(tile->position.x * tile_size),
-				(tile->position.y * tile_size),
-				tile_size, tile_size, RED);
+		if (debug_flags->tileBoundaries) {
+			for (SandTile* tile : world_tiles) {
+				DrawRectangleLines(
+					(tile->position.x * tile_size),
+					(tile->position.y * tile_size),
+					tile_size, tile_size, RED);
+			}
 		}
 	}
 
 	void DrawEmptyTiles() {
-		for (SandTile* tile : world_tiles) {
-			if (tile->simulated_cell_count == 0) {
-				DrawRectangle(
-					(tile->position.x * tile_size),
-					(tile->position.y * tile_size),
-					tile_size , tile_size , Color{ 0, 0, 0, 150 });
+		if (debug_flags->emptyTiles) {
+			for (SandTile* tile : world_tiles) {
+				if (tile->simulated_cell_count == 0) {
+					DrawRectangle(
+						(tile->position.x * tile_size),
+						(tile->position.y * tile_size),
+						tile_size , tile_size , Color{ 0, 0, 0, 150 });
+				}
 			}
 		}
 	}
 
 	void DrawDirtyRecs() {
-		for (SandTile* tile : world_tiles) {
-			if (tile->simulated_cell_count != 0) {
-				DrawRectangleLines(
-					(tile->position.x * tile_size + tile->d_rec.min.x) ,
-					(tile->position.y * tile_size + tile->d_rec.min.y) ,
-					(tile->d_rec.max.x - tile->d_rec.min.x + 1) ,
-					(tile->d_rec.max.y - tile->d_rec.min.y + 1) ,
-					GREEN);
+		if (debug_flags->dirtyRecs) {
+			for (SandTile* tile : world_tiles) {
+				if (tile->simulated_cell_count != 0) {
+					DrawRectangleLines(
+						(tile->position.x * tile_size + tile->d_rec.min.x) ,
+						(tile->position.y * tile_size + tile->d_rec.min.y) ,
+						(tile->d_rec.max.x - tile->d_rec.min.x + 1) ,
+						(tile->d_rec.max.y - tile->d_rec.min.y + 1) ,
+						GREEN);
+				}
 			}
 		}
 	}
@@ -219,13 +233,11 @@ public:
 	}
 	
 	void DrawFps(Color col, Font font) {
-		char fps_msg[8];
-		_itoa_s(GetFPS(), fps_msg, 8, 10);
-		DrawTextEx(font, fps_msg, {600, 50}, font.baseSize, 0, col);
+		std::string m1 = std::format("FPS: {}", GetFPS());
+		DrawTextEx(font, m1.c_str(), {600, 50}, font.baseSize, 0, col);
 
-		char ft_msg[16];
-		snprintf(ft_msg, 16, "%.2f ms", GetFrameTime() * 1000);
-		DrawTextEx(font, ft_msg, { 600, float(50 + font.baseSize) }, font.baseSize, 0, col);
+		std::string m2 = std::format("FT: {:.2f}", GetFrameTime() * 1000);
+		DrawTextEx(font, m2.c_str(), { 600, float(50 + font.baseSize) }, font.baseSize, 0, col);
 	}
 
 	SandTile* GetTileFromPos(IntVector tile_pos) {

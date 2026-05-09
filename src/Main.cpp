@@ -1,4 +1,3 @@
-#include <iostream>
 #include "raylib.h"
 #include "SandWorld.cpp"
 #include "CameraController.cpp"
@@ -26,6 +25,11 @@ void WorldDrawGui(SandWorld &world) {
 	if (prev_bsize != bsize) world.SetBrushSize((int)bsize);
 	if (world.brush_size != bsize) bsize = world.brush_size;
 	prev_bsize = bsize;
+
+	// debug
+	GuiCheckBox(CLITERAL(Rectangle) { screen_width - 200, 200, 50, 50}, "boundaries", &world.debug_flags->tileBoundaries);
+	GuiCheckBox(CLITERAL(Rectangle) { screen_width - 200, 250, 50, 50}, "empty tiles", &world.debug_flags->emptyTiles);
+	GuiCheckBox(CLITERAL(Rectangle) { screen_width - 200, 300, 50, 50}, "dirty recs", &world.debug_flags->dirtyRecs);
 }
 
 void ChangeGuiFontSize(int size) {
@@ -45,6 +49,9 @@ int main() {
 	world.MakeMultiTileWorld();
 	world.AllocateImageTileBuffers();
 	world.gui_bounds = { screen_width - 200, 50, 200, 150 };
+
+	DebugFlags debug_flags{.tileBoundaries = true, .emptyTiles = true, .dirtyRecs = true};
+	world.debug_flags = &debug_flags;
 
 	Image buddyworld = LoadImage("assets/beautifu.png");
 	ImageResize(&buddyworld, world_width * tile_size, world_height * tile_size);
