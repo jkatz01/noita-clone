@@ -1,7 +1,9 @@
 #pragma once
 
+#include <cstdio>
 #include <iostream>
 #include <array>
+#include <format>
 #include "raylib.h"
 #include "SandTile.cpp"
 #include "SandData.h"
@@ -241,39 +243,19 @@ public:
 		IntVector scaled_pos = CursorToWorld({ GetMouseX(), GetMouseY() });
 		IntVector tile_pos = CursorToTile(scaled_pos);
 		IntVector inner_pos = CursorToInnerPosition(scaled_pos, tile_pos);
-
-		char mouse_pos[100];
-		snprintf(mouse_pos, 100, "X: %d, Y: %d", GetMouseX(), GetMouseY());
-		DrawTextEx(font, mouse_pos, { 50, float(50 ) }, font.baseSize, 0, col);
-
-		char mouse_pos_s[100];
-		snprintf(mouse_pos_s, 100, "X: %d, Y: %d", scaled_pos.x, scaled_pos.y);
-		DrawTextEx(font, mouse_pos_s, { 50, float(50 + font.baseSize * 1) }, font.baseSize, 0, col);
-
-		char tile_num[20];
-		snprintf(tile_num, 20, "X: %d, Y: %d", tile_pos.x, tile_pos.y);
-		DrawTextEx(font, tile_num, { 50, float(50 + font.baseSize * 2 ) }, font.baseSize, 0, col);
-
-		char inner_num[20];
-		snprintf(inner_num, 20, "Tile: %d, %d", inner_pos.x, inner_pos.y);
-		DrawTextEx(font, inner_num, { 50, float(50 + font.baseSize * 3) }, font.baseSize, 0, col);
-
-		char brush[10];
-		snprintf(brush, 10, param_ref[brush_choice].type_name.c_str(), 1);
-		DrawTextEx(font, brush, { 50, float(50 + font.baseSize * 4 ) }, font.baseSize, 0, col);
-
 		SandTile* tile = GetTileFromPos(tile_pos);
-		char tile_cell_count[10];
-		snprintf(tile_cell_count, 10, "%d", tile->simulated_cell_count);
-		DrawTextEx(font, tile_cell_count, { 50, float(50 + font.baseSize * 5 ) }, font.baseSize, 0, col);
 
-		char sand_vel[100];
-		snprintf(sand_vel, 100, "X: %f, Y: %f",
-				tile->grid[tile->index(inner_pos)].velocity.x,
-				tile->grid[tile->index(inner_pos)].velocity.y);
-		DrawTextEx(font, sand_vel, { 50, float(50 + font.baseSize * 6) }, font.baseSize, 0, col);
+		std::string m1 = std::format("Mouse:  X: {}, Y: {}", GetMouseX(), GetMouseY());
+		std::string m2 = std::format("Scaled: X: {}, Y: {}", scaled_pos.x, scaled_pos.y);
+		std::string m3 = std::format("Tile:   X: {}, Y: {}", inner_pos.x, inner_pos.y);
+		std::string m4 = std::format("Brush: {}", param_ref[brush_choice].type_name);
+		std::string m5 = std::format("Cell count: {}", tile->simulated_cell_count);
+		std::string m6 = std::format("Vel: X: {}, Y: {}", 
+			tile->grid[tile->index(inner_pos)].velocity.x,
+			tile->grid[tile->index(inner_pos)].velocity.y);
 
-		DrawCircleLines((int)GetMouseX(), (int)GetMouseY(), (brush_size+1) / 2  * camera->zoom, col);
+		PrintOnScreen(col, font, {m1, m2, m3, m4, m5, m6});
+		DrawCircleLines((int)GetMouseX(), (int)GetMouseY(), (brush_size+1) / 2.0 * camera->zoom, col);
 	}
 
 	void AddMaterialSingleInWorld(IntVector world_pos, ParticleType m_type) {
@@ -399,5 +381,13 @@ public:
 			size = 2;
 		}
 		brush_size = size;
+	}
+
+	void PrintOnScreen(Color col, Font font, std::vector<std::string> messages) {
+		float h = float(font.baseSize);
+		for (std::string m : messages) {
+			DrawTextEx(font, m.c_str(), {50, 50 + h}, font.baseSize, 0, col);
+			h += font.baseSize;
+		}
 	}
 };

@@ -12,7 +12,7 @@ const int screen_width = 1400;
 const int screen_height = 1000;
 const int world_width = 6;
 const int world_height = 3;
-const int tile_size = 256;
+const int tile_size = 64;
 
 void WorldDrawGui(SandWorld &world) {
 	// slider
