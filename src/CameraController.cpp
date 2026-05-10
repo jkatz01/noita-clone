@@ -30,7 +30,7 @@ public:
 		// Camera zoom controls
 		camera.zoom += ((float)GetMouseWheelMove() * 0.5f);
 
-		if (camera.zoom > 5.0f) camera.zoom = 5.0f;
+		if (camera.zoom > 8.0f) camera.zoom = 8.0f;
 		else if (camera.zoom < 2.0f) camera.zoom = 2.0f;
 	}
 	

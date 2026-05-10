@@ -1,6 +1,7 @@
 #include "raylib.h"
 #include "SandWorld.cpp"
 #include "CameraController.cpp"
+#include "DebugTypes.h"
 
 #define RAYGUI_IMPLEMENTATION 
 #pragma warning( disable : 4996 4267 )
@@ -30,6 +31,7 @@ void WorldDrawGui(SandWorld &world) {
 	GuiCheckBox(CLITERAL(Rectangle) { screen_width - 200, 200, 50, 50}, "boundaries", &world.debug_flags->tileBoundaries);
 	GuiCheckBox(CLITERAL(Rectangle) { screen_width - 200, 250, 50, 50}, "empty tiles", &world.debug_flags->emptyTiles);
 	GuiCheckBox(CLITERAL(Rectangle) { screen_width - 200, 300, 50, 50}, "dirty recs", &world.debug_flags->dirtyRecs);
+	GuiCheckBox(CLITERAL(Rectangle) { screen_width - 200, 350, 50, 50}, "is freefalling", &world.debug_flags->isFreefalling);
 }
 
 void ChangeGuiFontSize(int size) {
@@ -44,14 +46,18 @@ int main() {
 	SetTargetFPS(60);
 
 	CameraController world_cam(screen_width, screen_height, world_width * tile_size, world_height * tile_size);
-	
-	SandWorld world(world_width, world_height, tile_size, &world_cam.camera);
+	DebugFlags debug_flags{
+	.tileBoundaries = true,
+	.emptyTiles = true,
+	.dirtyRecs = true,
+	.isFreefalling = true
+	};
+
+	SandWorld world(world_width, world_height, tile_size, &world_cam.camera, &debug_flags);
 	world.MakeMultiTileWorld();
 	world.AllocateImageTileBuffers();
-	world.gui_bounds = { screen_width - 200, 50, 200, 150 };
+	world.gui_bounds = { screen_width - 200, 50, 200, 400 };
 
-	DebugFlags debug_flags{.tileBoundaries = true, .emptyTiles = true, .dirtyRecs = true};
-	world.debug_flags = &debug_flags;
 
 	Image buddyworld = LoadImage("assets/beautifu.png");
 	ImageResize(&buddyworld, world_width * tile_size, world_height * tile_size);

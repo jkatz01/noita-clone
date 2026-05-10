@@ -11,6 +11,7 @@
 #include "SandData.h"
 #include "NeighbourTD.h"
 #include "RandomRange.h"
+#include "DebugTypes.h"
 
 struct ParticleUpdate {
     IntVector source;
@@ -43,7 +44,10 @@ public:
     TileRectangle d_rec   = { {0, 0}, {0, 0} }; // Update zone
     TileRectangle d_rec_w = { {0, 0}, {0, 0} };
 
-    SandTile(int _tile_size, IntVector _position) {
+    DebugFlags* debug_flags;
+
+
+    SandTile(int _tile_size, IntVector _position, DebugFlags* _flags) {
         tile_size = _tile_size;
         position = _position;
         if (tile_size < 10) tile_size = 10;
@@ -53,6 +57,8 @@ public:
         for (int i = 0; i < g_tile_size; i++) {
             grid[i].type = EMPTY;
         }
+
+		debug_flags = _flags;
     }
     ~SandTile() {
         delete grid;
@@ -412,13 +418,7 @@ public:
             return;
         }
 
-        //if (p->is_freefalling == 1) {
-        //    p->colour = BLUE;
-        //}
-        //else {
-        //    p->colour = RED;
-        //}
-            
+		
         // if freefalling move anywhere
         // if not, move down only  
         if (AbsVelocityLessThan(1, p)) { 
@@ -480,6 +480,7 @@ public:
                 ParticleType tp = new_p.type;
                 std::cout << "FUSION!!!" << std::endl; //shouldnt even get here 
                 new_p.colour = GREEN;
+				new_p.fusion = 1;
             }
         }
         UpdateSimZone(dst);

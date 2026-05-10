@@ -8,12 +8,7 @@
 #include "SandTile.cpp"
 #include "SandData.h"
 #include "NeighbourTD.h"
-
-struct DebugFlags {
-	bool tileBoundaries;
-	bool emptyTiles;
-	bool dirtyRecs;
-};
+#include "DebugTypes.h"
 
 class SandWorld {
 public:
@@ -38,10 +33,9 @@ public:
 	std::vector<SandTile*> world_tiles; //fixed world size for now, otherwise the indexing can get wrong
 	std::vector<Color*> tile_color_buffers;
 
-	DebugFlags *debug_flags;
+	DebugFlags* debug_flags;
 
-	// TODO: tile size should be a power of 2, not something custom decided by the world size
-	SandWorld(int _tiles_horizontal, int _tiles_vertical, int _tile_size, Camera2D *cam) {
+	SandWorld(int _tiles_horizontal, int _tiles_vertical, int _tile_size, Camera2D *cam, DebugFlags *flags) {
 		world_width = _tile_size * _tiles_horizontal;
 		world_height = _tile_size * _tiles_vertical;
 		tiles_width = _tiles_horizontal;
@@ -54,6 +48,7 @@ public:
 		camera = cam;
 		world_tiles.reserve(tile_number);
 		tile_color_buffers.reserve(tile_number);
+		debug_flags = flags;
 	}
 
 	bool MouseInBounds(IntVector pos) {
@@ -64,7 +59,7 @@ public:
 		return ( (pos.x >= gui_bounds.x && pos.x < gui_bounds.x + gui_bounds.width) && (pos.y >= gui_bounds.y && pos.y < gui_bounds.y + gui_bounds.height) );
 	}
 
-	// Screen mouse position -> Grid scaled mouse position
+	// Screen mouse position -> Grid scaled mouse position which is always in bounds
 	IntVector CursorToWorld(IntVector screen_pos) {
 		// potentially GetScreenToWorld2D ??
 		Vector2 the = GetScreenToWorld2D(screen_pos.toVector2(), *camera);
@@ -97,8 +92,17 @@ public:
 		return {x, y};
 	}
 
-	bool CursorInWorldBounds(IntVector pos) {
+	bool CursorInWorldBounds(IntVector scaled_pos) {
+		// problem: fundementally, CursorToWorld will always be in bounds
+		IntVector pos = scaled_pos;
 		return ((pos.x >= 0 && pos.x < tile_size*tiles_width) && (pos.y >= 0 && pos.y < tile_size*tiles_height));
+	}
+
+	bool CursorUnscaledOutsideWorld(IntVector screen_pos) {
+		Vector2 the = GetScreenToWorld2D(screen_pos.toVector2(), *camera);
+		IntVector pos = {(int)the.x, (int)the.y};
+		
+		return (pos.x < 0 || pos.x >= tile_size*tiles_width || pos.y < 0 || pos.y >= tile_size*tiles_height);
 	}
 
 	void draw() {
@@ -112,7 +116,7 @@ public:
 	void MakeMultiTileWorld() {
 		srand((unsigned int)seed);
 		for (int i = 0; i < tile_number; i++) {
-			SandTile *t = new SandTile(tile_size, { i % tiles_width , i / tiles_width });
+			SandTile *t = new SandTile(tile_size, { i % tiles_width , i / tiles_width }, debug_flags);
 			world_tiles.push_back(t);
 			//t->AddMaterialSquare({50, 50}, 2, SAND);
 		}
@@ -155,8 +159,17 @@ public:
 	}
 
 	Image MakeTileImage(SandTile* tile, Color* buffer) {
-		for (int i = 0; i < tile_size * tile_size; i++) {
-			buffer[i] = tile->grid[i].colour;
+		if (debug_flags->isFreefalling) {
+			for (int i = 0; i < tile_size * tile_size; i++) {
+				Color debug_red = CLITERAL(Color) {255, 0, 0, tile->grid[i].colour.a};
+				debug_red.b = 200 * tile->grid[i].is_freefalling;
+				buffer[i] = debug_red;
+			}
+		}
+		else { 
+			for (int i = 0; i < tile_size * tile_size; i++) {
+				buffer[i] = tile->grid[i].colour;
+			}
 		}
 		return { buffer, tile_size , tile_size , 1, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8 };
 	}
@@ -331,7 +344,7 @@ public:
 		static int mouse_held = 0;
 		static IntVector prev_pos = scaled_pos;
 
-		if ( !CursorInWorldBounds(scaled_pos) || MouseInGuiBounds({ GetMouseX(), GetMouseY() }) ) {
+		if ( CursorUnscaledOutsideWorld({GetMouseX(), GetMouseY()}) || MouseInGuiBounds({ GetMouseX(), GetMouseY() }) ) {
 			mouse_held = 0;
 			return;
 		}

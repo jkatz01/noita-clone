@@ -153,6 +153,7 @@
     <Image Include="assets\buddyworld.png" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\DebugTypes.h" />
     <ClInclude Include="src\RandomRange.h" />
     <ClInclude Include="src\SandData.h" />
     <ClInclude Include="src\NeighbourTD.h" />

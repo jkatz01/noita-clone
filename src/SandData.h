@@ -29,6 +29,7 @@ struct Particle {
     Color        colour = CLITERAL(Color) { 0, 0, 0, 100 };
     short        should_update = 1;
     short        is_freefalling = 1;
+	short        fusion = 0;
 };
 
 Color GenerateParticleColor(ParticleType type);
