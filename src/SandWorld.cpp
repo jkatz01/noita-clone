@@ -113,6 +113,8 @@ public:
 		return {index % tile_size, index / tile_size };
 	}
 
+	// TODO: we would probably create threads here
+
 	void MakeMultiTileWorld() {
 		srand((unsigned int)seed);
 		for (int i = 0; i < tile_number; i++) {
@@ -123,6 +125,8 @@ public:
 		
 		MultiWorldAddNeighbours();
 	}
+
+	// TODO: we can probably assign tiles to threads here
 
 	void MultiWorldAddNeighbours() {
 		for (int i = 0; i < tile_number; i++) {
@@ -339,7 +343,6 @@ public:
 		}
 		IntVector scaled_pos = CursorToWorld({ GetMouseX(), GetMouseY() });
 		IntVector tile_pos = CursorToTile(scaled_pos);
-		SandTile* tile = GetTileFromPos(tile_pos);
 
 		static int mouse_held = 0;
 		static IntVector prev_pos = scaled_pos;

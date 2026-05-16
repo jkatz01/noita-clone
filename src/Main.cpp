@@ -1,18 +1,14 @@
 #include "raylib.h"
+#include "raygui.h"
 #include "SandWorld.cpp"
 #include "CameraController.cpp"
 #include "DebugTypes.h"
-
-#define RAYGUI_IMPLEMENTATION 
-#pragma warning( disable : 4996 4267 )
-#include "raygui.h"
-#pragma warning( default : 4996 4267 )
 
 const int screen_width = 1400;
 const int screen_height = 1000;
 const int world_width = 6;
 const int world_height = 3;
-const int tile_size = 64;
+const int tile_size = 128;
 
 void WorldDrawGui(SandWorld &world) {
 	// slider
@@ -64,6 +60,7 @@ int main() {
 	Texture2D bg_texture = LoadTextureFromImage(buddyworld);
 	UnloadImage(buddyworld);
 
+	// address sanitizer doesn't like this
 	GuiLoadStyle("assets/style_cherry.rgs");
 	ChangeGuiFontSize(7);
 

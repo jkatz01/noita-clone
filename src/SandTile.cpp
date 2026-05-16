@@ -154,6 +154,7 @@ public:
         return param_ref[t].movement_type;
     }
 
+    // TODO: Number 2 time using function to optimize
     Particle* GetParticleAt(IntVector pos) {
         if (!InBounds(pos)) {
             return nullptr;
@@ -325,7 +326,7 @@ public:
             Particle pcopy = *p;
             InsertParticle(pos, *tile_neighbours[n_moved_to]->GetParticleAt(end_pos));
 
-            // Lock mutex here?
+            // Lock mutex here? How do we tell the neighbour to do that?
             tile_neighbours[n_moved_to]->InsertParticle(end_pos, pcopy);
             tile_neighbours[n_moved_to]->MoveInFrameByDifference(end_pos, diff);
         }
@@ -357,6 +358,7 @@ public:
         //}
     }
 
+    // TODO: Number 1 time using function to optimize
     void GetNewParticleVelocity(IntVector pos, Particle* p) {
         const std::vector<Vector2>* mv = GetMovementDirections(p->type);
         // when a powder is freefalling
@@ -477,7 +479,6 @@ public:
                 simulated_cell_add();
             }
             if (the->type == new_p.type) {
-                ParticleType tp = new_p.type;
                 std::cout << "FUSION!!!" << std::endl; //shouldnt even get here 
                 new_p.colour = GREEN;
 				new_p.fusion = 1;

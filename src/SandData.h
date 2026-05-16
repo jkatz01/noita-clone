@@ -23,6 +23,7 @@ enum ParticleType {
     STEAM
 };
 
+// TODO: Replace with structure-of-arrays, that would be cool
 struct Particle {
     ParticleType type = DOWN_ONLY;
     Vector2      velocity = { 0, 0 };
