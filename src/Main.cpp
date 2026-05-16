@@ -6,9 +6,9 @@
 
 const int screen_width = 1400;
 const int screen_height = 1000;
-const int world_width = 6;
-const int world_height = 3;
-const int tile_size = 128;
+const int world_width = 3;
+const int world_height = 4;
+const int tile_size = 32;
 
 void WorldDrawGui(SandWorld &world) {
 	// slider
@@ -39,14 +39,14 @@ void ChangeGuiFontSize(int size) {
 int main() {
 	InitWindow(screen_width, screen_height, "World");
 	SetTraceLogLevel(LOG_WARNING);
-	SetTargetFPS(60);
+	SetTargetFPS(30);
 
 	CameraController world_cam(screen_width, screen_height, world_width * tile_size, world_height * tile_size);
 	DebugFlags debug_flags{
 	.tileBoundaries = true,
-	.emptyTiles = true,
-	.dirtyRecs = true,
-	.isFreefalling = true
+	.emptyTiles = false,
+	.dirtyRecs = false,
+	.isFreefalling = false
 	};
 
 	SandWorld world(world_width, world_height, tile_size, &world_cam.camera, &debug_flags);
@@ -66,6 +66,10 @@ int main() {
 
 	Font font = LoadFontEx("assets/Westington.ttf", 48, 0, 0);
 	SetTextureFilter(font.texture, TEXTURE_FILTER_TRILINEAR);
+
+
+	// remove
+	world.world_tiles[2]->AddMaterialSingle({20, 20}, DOWN_ONLY);
 
 	while (!WindowShouldClose()) {
 		BeginDrawing();

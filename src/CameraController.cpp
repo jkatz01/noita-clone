@@ -5,6 +5,9 @@ class CameraController {
 public:
 	Camera2D camera;
 
+	float max_zoom = 12.0f;
+	float min_zoom = 2.0f;
+
 	CameraController(int screen_width, int screen_height, int world_width, int world_height) {
 		camera.offset = { screen_width / 2.0f, screen_height / 2.0f };
 		camera.target = { world_width / 2.0f, world_height / 2.0f};
@@ -30,8 +33,8 @@ public:
 		// Camera zoom controls
 		camera.zoom += ((float)GetMouseWheelMove() * 0.5f);
 
-		if (camera.zoom > 8.0f) camera.zoom = 8.0f;
-		else if (camera.zoom < 2.0f) camera.zoom = 2.0f;
+		if (camera.zoom > max_zoom) camera.zoom = max_zoom;
+		else if (camera.zoom < min_zoom) camera.zoom = min_zoom;
 	}
 	
 };

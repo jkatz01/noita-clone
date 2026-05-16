@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <print>
 #include "raylib.h"
 #include "raymath.h"
 
@@ -337,13 +338,15 @@ public:
         NeighbourTD n_moved_to = ND_MYSELF;
         IntVector end_pos = MoveVelocity(pos, {p->velocity.x - diff.x, p->velocity.y - diff.y}, &n_moved_to);
 
-        if (n_moved_to == ND_MYSELF) {
-            if (!(end_pos == pos)) {
-                p->should_update = 0;
-                SwapParticles(pos, end_pos); //maybe need a should_update flag?
-            }
-        }
-        // TODO: Enable moving through more than 1 chunk per frame 
+        // We moved the particle in tile 2 but we're still in the iteration for tile 1
+        // so we should always set this to 0.
+		p->should_update = 0;
+		if (n_moved_to == ND_MYSELF) {
+			if (!(end_pos == pos)) {
+				SwapParticles(pos, end_pos); // maybe need a should_update flag?
+			}
+		}
+		// TODO: Enable moving through more than 1 chunk per frame 
         // This seems to happen even when it shouldnt
         //else {
         //    std::cout << "moved to neighobur in frame again" << std::endl;

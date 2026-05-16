@@ -167,6 +167,9 @@ public:
 			for (int i = 0; i < tile_size * tile_size; i++) {
 				Color debug_red = CLITERAL(Color) {255, 0, 0, tile->grid[i].colour.a};
 				debug_red.b = 200 * tile->grid[i].is_freefalling;
+				if (tile->grid[i].type == EMPTY) {
+					debug_red = {0, 0, 0, 100};
+				}
 				buffer[i] = debug_red;
 			}
 		}
@@ -385,6 +388,9 @@ public:
 		}
 		else if (IsKeyPressed(KEY_FOUR)) {
 			brush_choice = STEAM;
+		}
+		else if (IsKeyPressed(KEY_FIVE)) {
+			brush_choice = DOWN_ONLY;
 		}
 
 		if (IsKeyPressed(KEY_R)) {
