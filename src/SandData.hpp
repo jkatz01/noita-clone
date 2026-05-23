@@ -1,9 +1,8 @@
 #pragma once
 
 #include <vector>
-#include "IntVector.h"
 #include "raylib.h"
-#include "RandomRange.h"
+#include "RandomRange.hpp"
 
 #define PARTICLE_TYPE_COUNT 6
 

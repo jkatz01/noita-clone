@@ -158,11 +158,11 @@
   <ItemGroup>
     <ClCompile Include="src\CameraController.cpp" />
     <ClCompile Include="src\NeighbourTD.cpp" />
-    <ClCompile Include="src\IntVector.h" />
     <ClCompile Include="src\RandomRange.cpp" />
     <ClCompile Include="src\raygui.cpp" />
     <ClCompile Include="src\SandData.cpp" />
     <ClCompile Include="src\SandWorld.cpp" />
+    <ClCompile Include="src\ThreadPool.cpp" />
     <Text Include="old\old_program.txt" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\SandTile.cpp" />
@@ -172,10 +172,12 @@
     <Image Include="assets\buddyworld.png" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\DebugTypes.h" />
-    <ClInclude Include="src\RandomRange.h" />
-    <ClInclude Include="src\SandData.h" />
-    <ClInclude Include="src\NeighbourTD.h" />
+    <ClInclude Include="src\DebugTypes.hpp" />
+    <ClInclude Include="src\IntVector.hpp" />
+    <ClInclude Include="src\NeighbourTD.hpp" />
+    <ClInclude Include="src\RandomRange.hpp" />
+    <ClInclude Include="src\SandData.hpp" />
+    <ClInclude Include="src\ThreadPool.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="assets\PERBI___.TTF" />

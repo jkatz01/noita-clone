@@ -1,14 +1,14 @@
 #pragma once
 
 #include <cstdio>
-#include <iostream>
-#include <array>
 #include <format>
+#include <functional>
 #include "raylib.h"
 #include "SandTile.cpp"
-#include "SandData.h"
-#include "NeighbourTD.h"
-#include "DebugTypes.h"
+#include "SandData.hpp"
+#include "NeighbourTD.hpp"
+#include "DebugTypes.hpp"
+#include "ThreadPool.hpp"
 
 class SandWorld {
 public:
@@ -22,7 +22,7 @@ public:
 
 	int tile_number		= tiles_width * tiles_height;
 	Camera2D *camera; //TODO: maybe the camera should be kept inside the SandWorld?
-	Rectangle gui_bounds = {0};
+	Rectangle gui_bounds = {};
 
 	size_t seed = 7000;
 	size_t frame_counter = 0;
@@ -34,6 +34,8 @@ public:
 	std::vector<Color*> tile_color_buffers;
 
 	DebugFlags* debug_flags;
+
+	// ThreadPool threadpool;
 
 	SandWorld(int _tiles_horizontal, int _tiles_vertical, int _tile_size, Camera2D *cam, DebugFlags *flags) {
 		world_width = _tile_size * _tiles_horizontal;
@@ -49,6 +51,12 @@ public:
 		world_tiles.reserve(tile_number);
 		tile_color_buffers.reserve(tile_number);
 		debug_flags = flags;
+
+		// threadpool.Start();
+	}
+
+	~SandWorld() {
+		// threadpool.Stop();
 	}
 
 	bool MouseInBounds(IntVector pos) {
@@ -113,8 +121,6 @@ public:
 		return {index % tile_size, index / tile_size };
 	}
 
-	// TODO: we would probably create threads here
-
 	void MakeMultiTileWorld() {
 		srand((unsigned int)seed);
 		for (int i = 0; i < tile_number; i++) {
@@ -125,8 +131,6 @@ public:
 		
 		MultiWorldAddNeighbours();
 	}
-
-	// TODO: we can probably assign tiles to threads here
 
 	void MultiWorldAddNeighbours() {
 		for (int i = 0; i < tile_number; i++) {
@@ -145,6 +149,10 @@ public:
 
 	void UpdateMultiTileWorld() {
 		for (SandTile* tile : world_tiles) {
+			// std::function<void()>fn = [tile]() {
+			// 	tile->IterateTileAlternate();
+			// };
+			// threadpool.QueueJob(fn);
 			tile->IterateTileAlternate();
 		}
 	}

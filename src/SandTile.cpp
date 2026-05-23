@@ -1,21 +1,22 @@
 #pragma once
+#include <cassert>
+#include <mutex>
+#include <print>
 #pragma warning( disable : 4244 )
 
 #include <iostream>
 #include <vector>
 #include <algorithm>
-#include <print>
 #include "raylib.h"
-#include "raymath.h"
 
-#include "IntVector.h"
-#include "SandData.h"
-#include "NeighbourTD.h"
-#include "RandomRange.h"
-#include "DebugTypes.h"
+#include "IntVector.hpp"
+#include "SandData.hpp"
+#include "NeighbourTD.hpp"
+#include "RandomRange.hpp"
+#include "DebugTypes.hpp"
 
 struct ParticleUpdate {
-    IntVector source;
+	Particle p;
     IntVector dest;
 };
 
@@ -46,7 +47,9 @@ public:
     TileRectangle d_rec_w = { {0, 0}, {0, 0} };
 
     DebugFlags* debug_flags;
-
+	
+	std::mutex read_memory_mu;
+	std::mutex update_list_mu;
 
     SandTile(int _tile_size, IntVector _position, DebugFlags* _flags) {
         tile_size = _tile_size;
@@ -323,42 +326,39 @@ public:
             }
         }
         else {
-            end_pos = TranslateParticleToNeighbour(end_pos, tile_size);
-            Particle pcopy = *p;
-            InsertParticle(pos, *tile_neighbours[n_moved_to]->GetParticleAt(end_pos));
+			auto mid_pos = end_pos;
+            mid_pos = TranslateParticleToNeighbour(mid_pos, tile_size);
+            // InsertParticle(pos, *tile_neighbours[n_moved_to]->GetParticleAt(mid_pos));
 
             // Lock mutex here? How do we tell the neighbour to do that?
-            tile_neighbours[n_moved_to]->InsertParticle(end_pos, pcopy);
-            tile_neighbours[n_moved_to]->MoveInFrameByDifference(end_pos, diff);
+			// lock update list, (or write to temporary list)
+			auto neighbour = tile_neighbours[n_moved_to];
+
+			// temporary swap only for calculation
+			// this would require locking the entire read memory
+			Particle temp = neighbour->grid[index(mid_pos)];
+			Particle pcopy = *p;
+			// pcopy.should_update = 0;
+
+			neighbour->grid[index(mid_pos)] = pcopy;
+
+			IntVector final_pos = neighbour->MoveVelocity(mid_pos, {pcopy.velocity.x - diff.x, pcopy.velocity.y - diff.y}, &n_moved_to);
+            final_pos = TranslateParticleToNeighbour(final_pos, tile_size);
+
+			// get updated pcopy with side effects, reset temp
+			pcopy = neighbour->grid[index(mid_pos)];
+			neighbour->grid[index(mid_pos)] = temp;
+
+			assert(InBounds(final_pos));
+			assert(InBounds(pos));
+
+			// we basically need a swap, but between neighbours 
+			Particle replacement = neighbour->grid[index(final_pos)];
+			neighbour->updates.push_back({pcopy, final_pos});
+			updates.push_back({replacement, pos});
+			// we need to make sure the neighbour will actually simulate
+			
         }
-    }
-
-    void MoveInFrameByDifference(IntVector pos, IntVector diff) {
-        Particle* p = GetParticleAt(pos);
-        NeighbourTD n_moved_to = ND_MYSELF;
-        IntVector end_pos = MoveVelocity(pos, {p->velocity.x - diff.x, p->velocity.y - diff.y}, &n_moved_to);
-
-        // We moved the particle in tile 2 but we're still in the iteration for tile 1
-        // so we should always set this to 0.
-		p->should_update = 0;
-		if (n_moved_to == ND_MYSELF) {
-			if (!(end_pos == pos)) {
-				SwapParticles(pos, end_pos); // maybe need a should_update flag?
-			}
-		}
-		// TODO: Enable moving through more than 1 chunk per frame 
-        // This seems to happen even when it shouldnt
-        //else {
-        //    std::cout << "moved to neighobur in frame again" << std::endl;
-        //    // bug happens here
-        //    end_pos = TranslateParticleToNeighbour(end_pos, tile_size);
-        //    //QueueNeighbourMovementParticle(end_pos, *p, n_moved_to, diff);
-        //    Particle pcopy = *p;
-        //    InsertParticle(pos, *tile_neighbours[n_moved_to]->GetParticleAt(end_pos));
-        //    // Lock mutex here?
-        //    tile_neighbours[n_moved_to]->InsertParticle(end_pos, pcopy);
-        //    tile_neighbours[n_moved_to]->MoveInFrameByDifference(end_pos, GetParticleAt(end_pos), diff);
-        //}
     }
 
     // TODO: Number 1 time using function to optimize
@@ -451,7 +451,11 @@ public:
     }
 
     void QueueUpdateSwapParticles(IntVector v_src, IntVector v_dst) {
-        updates.push_back({ v_src, v_dst });
+        // updates.push_back({ v_src, v_dst });
+		Particle *p_src = GetParticleAt(v_src);
+		Particle *p_dst = GetParticleAt(v_dst);
+		updates.push_back({*p_src, v_dst});
+		updates.push_back({*p_dst, v_src});
     }
 
     // swaps source with destination
@@ -471,6 +475,17 @@ public:
         if(!InBoundsThick(dst, 1)) UpdateNeighbourZones(dst);
     }
 
+	void SetParticle(IntVector dst, Particle p) {
+		p.is_freefalling = 1;
+        grid[index(dst)] = p;
+
+		UpdateSimZone(dst);
+
+        if(!InBoundsThick(dst, 1)) {
+			UpdateNeighbourZones(dst);
+		}
+	}
+
     // swaps destination for any particle
     void InsertParticle(IntVector dst, Particle new_p) {
         if (new_p.type == EMPTY) {
@@ -482,14 +497,15 @@ public:
                 simulated_cell_add();
             }
             if (the->type == new_p.type) {
-                std::cout << "FUSION!!!" << std::endl; //shouldnt even get here 
-                new_p.colour = GREEN;
-				new_p.fusion = 1;
+				assert(false); // unreachable, causes fusion
             }
         }
         UpdateSimZone(dst);
-        if (!InBoundsThick(dst, 1)) UpdateNeighbourZones(dst);
-        grid[index(dst)] = new_p;
+        if (!InBoundsThick(dst, 1)) {
+			UpdateNeighbourZones(dst);
+		}
+		// updates.push_back({new_p, dst});
+		grid[index(dst)] = new_p;
     }
 
     void UpdateDraws() {
@@ -592,20 +608,26 @@ public:
 
     void IterateTileAlternate() {
         UpdateDraws();
-        
 
-        if (simulated_cell_count == 0 && simulated_previous == 0) {
-            UpdateZoneRectangle();
-            d_rec = d_rec_w;
-            return;
+        if (position == IntVector{1, 2}) {
+            std::println("hi again");
         }
+        
+        // for some reason this can happen even when we have updates
+		// which is why the particle isnt moving
+        // if (simulated_cell_count == 0 && simulated_previous == 0) {
+        //     UpdateZoneRectangle();
+        //     d_rec = d_rec_w;
+        //     return;
+        // }
         simulated_previous = simulated_cell_count;
 
         UpdateParticles();
 
         // Update grid
         for (ParticleUpdate& pu : updates) {
-            SwapParticles(pu.source, pu.dest);
+			assert(InBounds(pu.dest));
+			SetParticle(pu.dest, pu.p);
         }
         updates.clear();
 

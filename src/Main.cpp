@@ -2,7 +2,7 @@
 #include "raygui.h"
 #include "SandWorld.cpp"
 #include "CameraController.cpp"
-#include "DebugTypes.h"
+#include "DebugTypes.hpp"
 
 const int screen_width = 1400;
 const int screen_height = 1000;
@@ -39,7 +39,7 @@ void ChangeGuiFontSize(int size) {
 int main() {
 	InitWindow(screen_width, screen_height, "World");
 	SetTraceLogLevel(LOG_WARNING);
-	SetTargetFPS(30);
+	SetTargetFPS(10);
 
 	CameraController world_cam(screen_width, screen_height, world_width * tile_size, world_height * tile_size);
 	DebugFlags debug_flags{

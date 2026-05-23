@@ -1,4 +1,4 @@
-#include "RandomRange.h"
+#include "RandomRange.hpp"
 
 float rand_range(float min, float max)
 {

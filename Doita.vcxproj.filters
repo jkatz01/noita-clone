@@ -24,9 +24,6 @@
     <ClCompile Include="src\SandWorld.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\IntVector.h">
-      <Filter>Header Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\NeighbourTD.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -40,6 +37,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\raygui.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ThreadPool.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -57,16 +57,22 @@
     </Text>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\SandData.h">
+    <ClInclude Include="src\RandomRange.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\NeighbourTD.h">
+    <ClInclude Include="src\SandData.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\RandomRange.h">
+    <ClInclude Include="src\ThreadPool.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\DebugTypes.h">
+    <ClInclude Include="src\NeighbourTD.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\IntVector.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\DebugTypes.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

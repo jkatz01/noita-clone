@@ -1,4 +1,4 @@
-#include "NeighbourTD.h"
+#include "NeighbourTD.hpp"
 
 inline bool NTDInBounds(IntVector pos, int tile_size) {
     return ((pos.x >= 0 && pos.x < tile_size) && (pos.y >= 0 && pos.y < tile_size));

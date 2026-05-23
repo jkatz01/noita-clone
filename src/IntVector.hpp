@@ -2,6 +2,7 @@
 #include "raylib.h"
 
 #pragma once
+
 class IntVector {
 public:
 
@@ -34,7 +35,4 @@ public:
 	Vector2 toVector2() {
 		return {(float)x, (float)y};
 	}
-
 };
-
-

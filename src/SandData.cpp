@@ -1,4 +1,4 @@
-#include "SandData.h"
+#include "SandData.hpp"
 
 Color GenerateParticleColor(ParticleType type) {
     if (type < 0 || type >= PARTICLE_TYPE_COUNT) {

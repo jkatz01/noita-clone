@@ -1,5 +1,5 @@
 #pragma once
-#include "IntVector.h"
+#include "IntVector.hpp"
 
 // Neighbour Tile Direction
 enum NeighbourTD {
