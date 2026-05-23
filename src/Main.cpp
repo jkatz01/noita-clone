@@ -6,8 +6,8 @@
 
 const int screen_width = 1400;
 const int screen_height = 1000;
-const int world_width = 3;
-const int world_height = 4;
+const int world_width = 1;
+const int world_height = 1;
 const int tile_size = 32;
 
 void WorldDrawGui(SandWorld &world) {
@@ -28,6 +28,7 @@ void WorldDrawGui(SandWorld &world) {
 	GuiCheckBox(CLITERAL(Rectangle) { screen_width - 200, 250, 50, 50}, "empty tiles", &world.debug_flags->emptyTiles);
 	GuiCheckBox(CLITERAL(Rectangle) { screen_width - 200, 300, 50, 50}, "dirty recs", &world.debug_flags->dirtyRecs);
 	GuiCheckBox(CLITERAL(Rectangle) { screen_width - 200, 350, 50, 50}, "is freefalling", &world.debug_flags->isFreefalling);
+	GuiCheckBox(CLITERAL(Rectangle) { screen_width - 200, 400, 50, 50}, "update positions", &world.debug_flags->drawUpdates);
 }
 
 void ChangeGuiFontSize(int size) {
@@ -39,20 +40,21 @@ void ChangeGuiFontSize(int size) {
 int main() {
 	InitWindow(screen_width, screen_height, "World");
 	SetTraceLogLevel(LOG_WARNING);
-	SetTargetFPS(10);
+	SetTargetFPS(30);
 
 	CameraController world_cam(screen_width, screen_height, world_width * tile_size, world_height * tile_size);
 	DebugFlags debug_flags{
 	.tileBoundaries = true,
-	.emptyTiles = false,
-	.dirtyRecs = false,
-	.isFreefalling = false
+	.emptyTiles = true,
+	.dirtyRecs = true,
+	.isFreefalling = false,
+	.drawUpdates = true
 	};
 
 	SandWorld world(world_width, world_height, tile_size, &world_cam.camera, &debug_flags);
 	world.MakeMultiTileWorld();
 	world.AllocateImageTileBuffers();
-	world.gui_bounds = { screen_width - 200, 50, 200, 400 };
+	world.gui_bounds = { screen_width - 200, 50, 200, 500 };
 
 
 	Image buddyworld = LoadImage("assets/beautifu.png");
@@ -69,7 +71,10 @@ int main() {
 
 
 	// remove
-	world.world_tiles[2]->AddMaterialSingle({20, 20}, DOWN_ONLY);
+	world.world_tiles[0]->AddMaterialSingle({4, 11}, WATER);
+	world.world_tiles[0]->AddMaterialSingle({4, 12}, WATER);
+	world.world_tiles[0]->AddMaterialSingle({6, 15}, WATER);
+	world_cam.camera.zoom = 20.0f;
 
 	while (!WindowShouldClose()) {
 		BeginDrawing();

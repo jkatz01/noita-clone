@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <format>
 #include <functional>
+#include <print>
 #include "raylib.h"
 #include "SandTile.cpp"
 #include "SandData.hpp"
@@ -147,21 +148,20 @@ public:
 		}
 	}
 
-	void UpdateMultiTileWorld() {
+	void UpdateMultiTileWorld_Read() {
 		for (SandTile* tile : world_tiles) {
 			// std::function<void()>fn = [tile]() {
 			// 	tile->IterateTileAlternate();
 			// };
 			// threadpool.QueueJob(fn);
-			tile->IterateTileAlternate();
+			tile->IterateTileRead();
 		}
 	}
-
-	// get all buffers
-	// make images from those buffers
-	// render all images as textures
-
-	// Only call once
+	void UpdateMultiTileWorld_Update() {
+		for (SandTile* tile : world_tiles) {
+			tile->IterateTileUpdate();
+		}
+	}
 
 	void AllocateImageTileBuffers() {
 		for (int i = 0; i < tile_number; i++) {
@@ -186,6 +186,23 @@ public:
 				buffer[i] = tile->grid[i].colour;
 			}
 		}
+		if (debug_flags->drawUpdates) {
+			for (ParticleUpdate& pu : tile->updates) {
+				if (pu.p.type != EMPTY) {
+					// if (tile->grid[tile->index(pu.dest)].type == WATER) { 
+					// 	buffer[tile->index(pu.dest)] = GREEN;
+					// }
+					Color myColor = CLITERAL(Color){255, 255, 255, 200};
+					if (ColorIsEqual(buffer[tile->index(pu.dst)], myColor)) {
+						
+						buffer[tile->index(pu.dst)] = GREEN;
+					} 
+					else {
+						buffer[tile->index(pu.dst)] = myColor;
+					}
+				}
+			}
+		}
 		return { buffer, tile_size , tile_size , 1, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8 };
 	}
 
@@ -200,7 +217,6 @@ public:
 		for (int i = 0; i < tile_number; i++) {
 			Image img = MakeTileImage(world_tiles[i], tile_color_buffers[i]);
 			textures.push_back(LoadTextureFromImage(img));
-			IntVector pos = VectorFromIndex(i);
 			DrawTexture(textures.back(), (world_tiles[i]->position.x * tile_size), (world_tiles[i]->position.y * tile_size), WHITE);
 		}
 		
@@ -249,8 +265,10 @@ public:
 		BrushSettings();
 		BrushInput();
 
-		UpdateMultiTileWorld();
+		UpdateMultiTileWorld_Read();
 		DrawTileImages();
+		UpdateMultiTileWorld_Update();
+		std::println("________");
 
 		DrawEmptyTiles();
 		DrawTileBoundaries();

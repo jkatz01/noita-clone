@@ -6,4 +6,5 @@ struct DebugFlags {
 	bool dirtyRecs;
 
 	bool isFreefalling;
+	bool drawUpdates;
 };

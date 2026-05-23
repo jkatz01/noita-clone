@@ -6,6 +6,7 @@
 class IntVector {
 public:
 
+	// TODO: Maybe use int16
 	int x, y;
 
 	IntVector() {
@@ -17,8 +18,6 @@ public:
 		x = _x;
 		y = _y;
 	}
-
-	// TODO: write compare function
 
 	bool operator==(const IntVector& rhs) const {
 		return (x == rhs.x && y == rhs.y);

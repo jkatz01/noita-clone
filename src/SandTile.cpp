@@ -4,7 +4,6 @@
 #include <print>
 #pragma warning( disable : 4244 )
 
-#include <iostream>
 #include <vector>
 #include <algorithm>
 #include "raylib.h"
@@ -15,9 +14,12 @@
 #include "RandomRange.hpp"
 #include "DebugTypes.hpp"
 
+// this struct is awfully big
 struct ParticleUpdate {
 	Particle p;
-    IntVector dest;
+	IntVector src;
+    IntVector dst;
+	bool is_swap;
 };
 
 struct ParticleUpdateDraw {
@@ -318,7 +320,7 @@ public:
 
         if (n_moved_to == ND_MYSELF) {
             if (!(end_pos == pos)) {
-                //DrawStupidLines(pos, end_pos);
+                // DrawStupidLines(pos, end_pos);
                 QueueUpdateSwapParticles(pos, end_pos); 
             }
             else {
@@ -354,27 +356,15 @@ public:
 
 			// we basically need a swap, but between neighbours 
 			Particle replacement = neighbour->grid[index(final_pos)];
-			neighbour->updates.push_back({pcopy, final_pos});
-			updates.push_back({replacement, pos});
-			// we need to make sure the neighbour will actually simulate
-			
+
+			neighbour->updates.push_back({.p = pcopy, .src = {}, .dst = final_pos, .is_swap = false});
+			updates.push_back({.p = replacement, .src {}, .dst = pos, .is_swap = false});
         }
     }
 
     // TODO: Number 1 time using function to optimize
     void GetNewParticleVelocity(IntVector pos, Particle* p) {
         const std::vector<Vector2>* mv = GetMovementDirections(p->type);
-        // when a powder is freefalling
-        // it should only go down, and not to the sides
-		
-        // if (p->is_freefalling == 1 && mv == &MT_POWDER) {
-        //     mv = &MT_DOWN_ONLY;
-        //     p->colour = BLUE;
-        // }
-        // else {
-        //     p->colour = RED;
-        // }
-
         for (Vector2 dir : *mv) {
             IntVector new_pos = { pos.x + (int)dir.x, pos.y + (int)dir.y };
 
@@ -451,11 +441,7 @@ public:
     }
 
     void QueueUpdateSwapParticles(IntVector v_src, IntVector v_dst) {
-        // updates.push_back({ v_src, v_dst });
-		Particle *p_src = GetParticleAt(v_src);
-		Particle *p_dst = GetParticleAt(v_dst);
-		updates.push_back({*p_src, v_dst});
-		updates.push_back({*p_dst, v_src});
+		updates.push_back({.p = {}, .src = v_src, .dst = v_dst, .is_swap = true});
     }
 
     // swaps source with destination
@@ -476,6 +462,25 @@ public:
     }
 
 	void SetParticle(IntVector dst, Particle p) {
+        if (p.type == EMPTY) {
+            simulated_cell_remove();
+        }
+        else {
+            Particle* dst_p = GetParticleAt(dst);
+            if (dst_p->type == EMPTY) {
+                simulated_cell_add();
+            }
+            if (dst_p->type == p.type) {
+				// we're getting this because when two particles want to go to the same position called Z 
+				// the first one sets Z to water, its previous to empty,
+				// the second one then sets Z to water (again), and itself to empty
+				// so we lose an overall particle. the current solution is to swap instead.
+				// Maybe there should be a global map of "desired" positions (rodents idea)
+				std::println("FUSION! in {} {}", dst.x, dst.y);
+				assert(false); // unreachable, causes fusion
+				return;
+            }
+        }
 		p.is_freefalling = 1;
         grid[index(dst)] = p;
 
@@ -606,32 +611,34 @@ public:
         }
     }
 
-    void IterateTileAlternate() {
+    void IterateTileRead() {
         UpdateDraws();
-
-        if (position == IntVector{1, 2}) {
-            std::println("hi again");
-        }
-        
         // for some reason this can happen even when we have updates
 		// which is why the particle isnt moving
-        // if (simulated_cell_count == 0 && simulated_previous == 0) {
-        //     UpdateZoneRectangle();
-        //     d_rec = d_rec_w;
-        //     return;
-        // }
+        if (simulated_cell_count == 0 && simulated_previous == 0) {
+            UpdateZoneRectangle();
+            d_rec = d_rec_w;
+            return;
+        }
         simulated_previous = simulated_cell_count;
 
         UpdateParticles();
+    }
 
+	void IterateTileUpdate() {
         // Update grid
         for (ParticleUpdate& pu : updates) {
-			assert(InBounds(pu.dest));
-			SetParticle(pu.dest, pu.p);
+			assert(InBounds(pu.dst));
+			// it would be better if we used swap and had different event types
+			if (pu.is_swap) {
+				SwapParticles(pu.src, pu.dst);
+			}
+			else {
+				SetParticle(pu.dst, pu.p);
+			}
         }
         updates.clear();
 
         UpdateZoneRectangle();
-        
-    }
+	}
 };
