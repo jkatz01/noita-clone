@@ -1,6 +1,7 @@
 #include "ThreadPool.hpp"
 #include <cstdint>
 #include <functional>
+#include <mutex>
 
 void ThreadPool::Start() {
 	const uint32_t num_threads = std::thread::hardware_concurrency();
@@ -25,8 +26,17 @@ void ThreadPool::ThreadLoop() {
 			}
 			job = jobs.front();
 			jobs.pop();
+			active_jobs++;
 		}
 		job();
+
+		{
+			std::unique_lock<std::mutex> lock(queue_mutex);
+			active_jobs--;
+			if (jobs.empty() && active_jobs == 0) {
+				finished_condition.notify_all();
+			}
+		}
 	}
 }
 
@@ -57,4 +67,12 @@ void ThreadPool::Stop() {
 		active_thread.join();
 	}
 	threads.clear();
+}
+
+void ThreadPool::WaitAll() {
+	std::unique_lock<std::mutex> lock(queue_mutex);
+
+	finished_condition.wait(lock, [this] {
+		return jobs.empty() && active_jobs == 0;
+	});
 }

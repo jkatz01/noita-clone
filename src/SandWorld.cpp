@@ -36,7 +36,7 @@ public:
 
 	DebugFlags* debug_flags;
 
-	// ThreadPool threadpool;
+	ThreadPool threadpool;
 
 	SandWorld(int _tiles_horizontal, int _tiles_vertical, int _tile_size, Camera2D *cam, DebugFlags *flags) {
 		world_width = _tile_size * _tiles_horizontal;
@@ -53,11 +53,11 @@ public:
 		tile_color_buffers.reserve(tile_number);
 		debug_flags = flags;
 
-		// threadpool.Start();
+		threadpool.Start();
 	}
 
 	~SandWorld() {
-		// threadpool.Stop();
+		threadpool.Stop();
 	}
 
 	bool MouseInBounds(IntVector pos) {
@@ -150,16 +150,20 @@ public:
 
 	void UpdateMultiTileWorld_Read() {
 		for (SandTile* tile : world_tiles) {
-			// std::function<void()>fn = [tile]() {
-			// 	tile->IterateTileAlternate();
-			// };
-			// threadpool.QueueJob(fn);
-			tile->IterateTileRead();
+			std::function<void()>fn = [tile]() {
+				tile->IterateTileRead();
+			};
+			threadpool.QueueJob(fn);
+			// tile->IterateTileRead();
 		}
 	}
 	void UpdateMultiTileWorld_Update() {
 		for (SandTile* tile : world_tiles) {
-			tile->IterateTileUpdate();
+			// tile->IterateTileUpdate();
+			std::function<void()>fn = [tile]() {
+				tile->IterateTileUpdate();
+			};
+			threadpool.QueueJob(fn);
 		}
 	}
 
@@ -194,7 +198,6 @@ public:
 					// }
 					Color myColor = CLITERAL(Color){255, 255, 255, 200};
 					if (ColorIsEqual(buffer[tile->index(pu.dst)], myColor)) {
-						
 						buffer[tile->index(pu.dst)] = GREEN;
 					} 
 					else {
@@ -261,14 +264,18 @@ public:
 		}
 	}
 
+
 	void executeFrame() {
 		BrushSettings();
 		BrushInput();
 
 		UpdateMultiTileWorld_Read();
+		threadpool.WaitAll();
+
 		DrawTileImages();
+
 		UpdateMultiTileWorld_Update();
-		std::println("________");
+		threadpool.WaitAll();
 
 		DrawEmptyTiles();
 		DrawTileBoundaries();

@@ -6,9 +6,9 @@
 
 const int screen_width = 1400;
 const int screen_height = 1000;
-const int world_width = 1;
-const int world_height = 1;
-const int tile_size = 32;
+const int world_width = 8;
+const int world_height = 8;
+const int tile_size = 128;
 
 void WorldDrawGui(SandWorld &world) {
 	// slider
@@ -40,15 +40,15 @@ void ChangeGuiFontSize(int size) {
 int main() {
 	InitWindow(screen_width, screen_height, "World");
 	SetTraceLogLevel(LOG_WARNING);
-	SetTargetFPS(30);
+	SetTargetFPS(0);
 
 	CameraController world_cam(screen_width, screen_height, world_width * tile_size, world_height * tile_size);
 	DebugFlags debug_flags{
-	.tileBoundaries = true,
-	.emptyTiles = true,
-	.dirtyRecs = true,
-	.isFreefalling = false,
-	.drawUpdates = true
+		.tileBoundaries = true,
+		.emptyTiles = true,
+		.dirtyRecs = true,
+		.isFreefalling = false,
+		.drawUpdates = false
 	};
 
 	SandWorld world(world_width, world_height, tile_size, &world_cam.camera, &debug_flags);
@@ -74,7 +74,7 @@ int main() {
 	world.world_tiles[0]->AddMaterialSingle({4, 11}, WATER);
 	world.world_tiles[0]->AddMaterialSingle({4, 12}, WATER);
 	world.world_tiles[0]->AddMaterialSingle({6, 15}, WATER);
-	world_cam.camera.zoom = 20.0f;
+	// world_cam.camera.zoom = 20.0f;
 
 	while (!WindowShouldClose()) {
 		BeginDrawing();

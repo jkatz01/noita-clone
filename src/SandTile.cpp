@@ -351,14 +351,19 @@ public:
 			pcopy = neighbour->grid[index(mid_pos)];
 			neighbour->grid[index(mid_pos)] = temp;
 
-			assert(InBounds(final_pos));
-			assert(InBounds(pos));
-
 			// we basically need a swap, but between neighbours 
 			Particle replacement = neighbour->grid[index(final_pos)];
 
+
+			neighbour->update_list_mu.lock();
+			assert(InBounds(final_pos));
 			neighbour->updates.push_back({.p = pcopy, .src = {}, .dst = final_pos, .is_swap = false});
+			neighbour->update_list_mu.unlock();
+
+			update_list_mu.lock();
+			assert(InBounds(pos));
 			updates.push_back({.p = replacement, .src {}, .dst = pos, .is_swap = false});
+			update_list_mu.unlock();
         }
     }
 
@@ -441,7 +446,11 @@ public:
     }
 
     void QueueUpdateSwapParticles(IntVector v_src, IntVector v_dst) {
+		update_list_mu.lock();
+		assert(InBounds(v_src));
+		assert(InBounds(v_dst));
 		updates.push_back({.p = {}, .src = v_src, .dst = v_dst, .is_swap = true});
+		update_list_mu.unlock();
     }
 
     // swaps source with destination
@@ -476,8 +485,11 @@ public:
 				// the second one then sets Z to water (again), and itself to empty
 				// so we lose an overall particle. the current solution is to swap instead.
 				// Maybe there should be a global map of "desired" positions (rodents idea)
-				std::println("FUSION! in {} {}", dst.x, dst.y);
-				assert(false); // unreachable, causes fusion
+
+
+				// ____ something is still wrong, this is reached very frequently ____
+				// std::println("SetParticle: FUSION! in {} {}", dst.x, dst.y);
+				// assert(false); // unreachable, causes fusion
 				return;
             }
         }
@@ -502,6 +514,7 @@ public:
                 simulated_cell_add();
             }
             if (the->type == new_p.type) {
+				std::println("InsertParticle: FUSION! in {} {}", dst.x, dst.y);
 				assert(false); // unreachable, causes fusion
             }
         }
@@ -509,7 +522,6 @@ public:
         if (!InBoundsThick(dst, 1)) {
 			UpdateNeighbourZones(dst);
 		}
-		// updates.push_back({new_p, dst});
 		grid[index(dst)] = new_p;
     }
 
@@ -626,16 +638,23 @@ public:
     }
 
 	void IterateTileUpdate() {
+		// at this point, all the reads happened
+		// i shouldn't have to lock this... as nothing in the update
+		// loop should be between neighbours
         // Update grid
+        int i = 0;
         for (ParticleUpdate& pu : updates) {
+            if (!InBounds(pu.dst)) {
+                std::println("not in bounds {} {}", pu.dst.x, pu.dst.y);
+            }
 			assert(InBounds(pu.dst));
-			// it would be better if we used swap and had different event types
 			if (pu.is_swap) {
 				SwapParticles(pu.src, pu.dst);
 			}
 			else {
 				SetParticle(pu.dst, pu.p);
 			}
+            i++;
         }
         updates.clear();
 
