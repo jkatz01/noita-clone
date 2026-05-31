@@ -97,5 +97,6 @@
     <None Include="assets\style_cherry.rgs">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="ParticleData.json" />
   </ItemGroup>
 </Project>

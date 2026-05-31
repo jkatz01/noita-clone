@@ -188,6 +188,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\style_cherry.rgs" />
+    <None Include="ParticleData.json" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
