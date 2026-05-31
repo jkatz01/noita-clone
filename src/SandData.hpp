@@ -30,6 +30,7 @@ struct Particle {
     short        should_update = 1;
     short        is_freefalling = 1;
 	short        fusion = 0;
+    float        temp;
 };
 
 Color GenerateParticleColor(ParticleType type);
