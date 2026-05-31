@@ -42,6 +42,9 @@
     <ClCompile Include="src\ThreadPool.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\SandWorldRenderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="assets\beautifu.png">
@@ -75,6 +78,15 @@
     <ClInclude Include="src\DebugTypes.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\SandWorldRenderer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\SandTile.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\BufferPixels.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Font Include="assets\PER_____.TTF">
@@ -96,6 +108,9 @@
   <ItemGroup>
     <None Include="assets\style_cherry.rgs">
       <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\tile_fragment_shader.glsl">
+      <Filter>Source Files</Filter>
     </None>
   </ItemGroup>
 </Project>

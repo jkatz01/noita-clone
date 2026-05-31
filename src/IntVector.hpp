@@ -34,4 +34,12 @@ public:
 	Vector2 toVector2() {
 		return {(float)x, (float)y};
 	}
+
+	IntVector operator-(const IntVector& rhs) const {
+		return IntVector(x - rhs.x, y - rhs.y);
+	}
+
+	IntVector operator*(const int& rhs) const {
+		return IntVector(x * rhs, y * rhs);
+	}
 };

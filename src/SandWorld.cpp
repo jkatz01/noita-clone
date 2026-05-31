@@ -5,11 +5,12 @@
 #include <functional>
 #include <print>
 #include "raylib.h"
-#include "SandTile.cpp"
+#include "SandTile.hpp"
 #include "SandData.hpp"
 #include "NeighbourTD.hpp"
 #include "DebugTypes.hpp"
 #include "ThreadPool.hpp"
+#include "SandWorldRenderer.hpp"
 
 class SandWorld {
 public:
@@ -37,6 +38,8 @@ public:
 	DebugFlags* debug_flags;
 
 	ThreadPool threadpool;
+
+	SandWorldRenderer renderer;
 
 	SandWorld(int _tiles_horizontal, int _tiles_vertical, int _tile_size, Camera2D *cam, DebugFlags *flags) {
 		world_width = _tile_size * _tiles_horizontal;
@@ -210,7 +213,9 @@ public:
 	}
 
 	//TODO: only unload/update tiles that have changed since the last frame
-	void DrawTileImages() {
+	void PassTileDataToRenderer() {
+
+
 		static std::vector<Texture> textures;
 		for (Texture& t : textures) {
 			UnloadTexture(t);
@@ -222,6 +227,12 @@ public:
 			textures.push_back(LoadTextureFromImage(img));
 			DrawTexture(textures.back(), (world_tiles[i]->position.x * tile_size), (world_tiles[i]->position.y * tile_size), WHITE);
 		}
+
+		for (int i = 0; i < tile_number; i++) {
+			renderer.uploadTileToBuffer(*world_tiles[i]);
+
+		}
+
 		
 	}
 
@@ -264,26 +275,42 @@ public:
 		}
 	}
 
+	void update() {
 
-	void executeFrame() {
 		BrushSettings();
 		BrushInput();
 
 		UpdateMultiTileWorld_Read();
 		threadpool.WaitAll();
 
-		DrawTileImages();
 
 		UpdateMultiTileWorld_Update();
 		threadpool.WaitAll();
 
+	}
+
+	void prerender() {
+
+		//moved because:
+		//Shouldn't this go after the tile update so we get the most recent tile state?
+		//Why would we draw the world right before its going to change instead of after?
+		PassTileDataToRenderer();
+		renderer.prerender();
+	}
+
+	void render() {
+
+
+		renderer.render();
+
 		DrawEmptyTiles();
 		DrawTileBoundaries();
 		DrawDirtyRecs();
-		
+
 
 		frame_counter++;
 	}
+
 	
 	void DrawFps(Color col, Font font) {
 		std::string m1 = std::format("FPS: {}", GetFPS());

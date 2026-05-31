@@ -39,6 +39,13 @@ void ChangeGuiFontSize(int size) {
 
 int main() {
 	InitWindow(screen_width, screen_height, "World");
+
+	if (!IsWindowReady()) {
+		TraceLog(LOG_ERROR, "Window failed to initialize!");
+	}
+
+	TraceLog(LOG_INFO, "Window initialized");
+
 	SetTraceLogLevel(LOG_WARNING);
 	SetTargetFPS(0);
 
@@ -55,7 +62,7 @@ int main() {
 	world.MakeMultiTileWorld();
 	world.AllocateImageTileBuffers();
 	world.gui_bounds = { screen_width - 200, 50, 200, 500 };
-
+	world.renderer.Init();
 
 	Image buddyworld = LoadImage("assets/beautifu.png");
 	ImageResize(&buddyworld, world_width * tile_size, world_height * tile_size);
@@ -77,14 +84,20 @@ int main() {
 	// world_cam.camera.zoom = 20.0f;
 
 	while (!WindowShouldClose()) {
+
+
+		world_cam.MoveCamera();
+		world.update();
+
+		world.prerender();
+
 		BeginDrawing();
 		ClearBackground(DARKGRAY);
 
-		world_cam.MoveCamera();
 
 		BeginMode2D(world_cam.camera);
 			DrawTexture(bg_texture, 0, 0, WHITE);
-			world.executeFrame();
+			world.render();
 		EndMode2D();
 
 		world.DrawFps({225, 115, 115, 255}, font);

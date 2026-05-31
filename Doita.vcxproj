@@ -162,6 +162,7 @@
     <ClCompile Include="src\raygui.cpp" />
     <ClCompile Include="src\SandData.cpp" />
     <ClCompile Include="src\SandWorld.cpp" />
+    <ClCompile Include="src\SandWorldRenderer.cpp" />
     <ClCompile Include="src\ThreadPool.cpp" />
     <Text Include="old\old_program.txt" />
     <ClCompile Include="src\Main.cpp" />
@@ -172,11 +173,14 @@
     <Image Include="assets\buddyworld.png" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\BufferPixels.hpp" />
     <ClInclude Include="src\DebugTypes.hpp" />
     <ClInclude Include="src\IntVector.hpp" />
     <ClInclude Include="src\NeighbourTD.hpp" />
     <ClInclude Include="src\RandomRange.hpp" />
     <ClInclude Include="src\SandData.hpp" />
+    <ClInclude Include="src\SandTile.hpp" />
+    <ClInclude Include="src\SandWorldRenderer.hpp" />
     <ClInclude Include="src\ThreadPool.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -188,6 +192,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\style_cherry.rgs" />
+    <None Include="src\tile_fragment_shader.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
