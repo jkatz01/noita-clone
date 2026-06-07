@@ -1,7 +1,7 @@
 #pragma once
 #include <raylib.h>
 #include <rlgl.h>
-#include <glad/glad.h>
+//#include <glad/glad.h>
 #include "IntVector.hpp"
 #include "SandTile.hpp"
 #include "BufferPixels.hpp"
