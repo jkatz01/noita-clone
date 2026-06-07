@@ -216,6 +216,18 @@ public:
 	void PassTileDataToRenderer() {
 
 
+		for (int i = 0; i < tile_number; i++) {
+			renderer.uploadTileToBuffer(*world_tiles[i]);
+
+		}
+
+		
+	}
+
+	//TODO: only unload/update tiles that have changed since the last frame
+	void OldTileRenderer() {
+
+
 		static std::vector<Texture> textures;
 		for (Texture& t : textures) {
 			UnloadTexture(t);
@@ -227,14 +239,8 @@ public:
 			textures.push_back(LoadTextureFromImage(img));
 			DrawTexture(textures.back(), (world_tiles[i]->position.x * tile_size), (world_tiles[i]->position.y * tile_size), WHITE);
 		}
-
-		for (int i = 0; i < tile_number; i++) {
-			renderer.uploadTileToBuffer(*world_tiles[i]);
-
-		}
-
-		
 	}
+
 
 	void DrawTileBoundaries() {
 		if (debug_flags->tileBoundaries) {
@@ -300,6 +306,7 @@ public:
 
 	void render() {
 
+		OldTileRenderer();
 
 		renderer.render();
 

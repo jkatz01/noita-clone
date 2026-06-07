@@ -687,9 +687,22 @@ public:
     }
 
     void updateBuffers(Particle& particle, int index) {
-        buffer0[index].r = (float)particle.type;
-        buffer0[index].g = particle.colour.r * 256 + particle.colour.g;
-        buffer0[index].b = particle.colour.b * 256 + particle.colour.a;
+        float r, g, b;
+
+        auto buffer0Pixel = &buffer0[index];
+
+
+
+        r = (float)particle.type;
+        buffer0Pixel->r = r;
+
+
+        g= particle.colour.r + (particle.colour.g * 256);
+        buffer0Pixel->g = g;
+        b = particle.colour.b + (particle.colour.a * 256);
+        buffer0Pixel->b = b;
+
+        buffer0Pixel->a = 0;
         
     }
 };

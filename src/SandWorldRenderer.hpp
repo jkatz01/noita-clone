@@ -5,6 +5,8 @@
 #include "IntVector.hpp"
 #include "SandTile.hpp"
 #include "BufferPixels.hpp"
+#include <vector>
+
 #pragma warning( disable : 26495 )
 
 class SandWorldRenderer
@@ -20,7 +22,7 @@ class SandWorldRenderer
 
 	IntVector tileOrigin = IntVector(0, 0); //top left
 
-	const int TILE_SIZE = 100;//TODO get the truth from tile_size in SandTile.cpp, will cause future bug if we change the tile size in tile only
+	const int TILE_SIZE = 128;//TODO get the truth from tile_size in SandTile.cpp, will cause future bug if we change the tile size in tile only
 
 	int bufferWidth, bufferHeight;
 
@@ -28,8 +30,14 @@ class SandWorldRenderer
 	IntVector renderOffset = IntVector(renderMargin, renderMargin); //essentially 0,0
 	bool init = false;
 
+
+	
+	std::vector<float> tileTestData;
+
+	
+
 public:
-	SandWorldRenderer() {
+	SandWorldRenderer() : tileTestData(TILE_SIZE* TILE_SIZE, 255.0){
 		Init();
 	}
 
@@ -42,18 +50,19 @@ public:
 
 		//grid buffers need to hold whole chunks
 
-		int xCount = (screenWidth / 100) + 1; //since int div floors, +1 makes sure we are over the amount
-		int yCount = (screenHeight / 100) + 1;
+		int xCount = (screenWidth / TILE_SIZE) + 1; //since int div floors, +1 makes sure we are over the amount
+		int yCount = (screenHeight / TILE_SIZE) + 1;
 		//These are the tile counts,
 
 
+		/*
 		Image img = GenImageColor(200, 200, BLANK); // fully transparent image
 		// Alternatively, manually create image data:
 		// Image img = GenImageColor(200, 200, (Color){0, 0, 0, 0});
 
 		// Convert image to GPU texture
 		Texture2D texture = LoadTextureFromImage(img);
-
+		*/
 
 
 
@@ -142,8 +151,10 @@ public:
 	void uploadTileToBuffer(SandTile& tile) {
 		if (!init) { Init(); }
 		IntVector relativePos = (tile.position - tileOrigin)*TILE_SIZE;
-		//std::cout << "updating tile" <<std::endl;
+		//std::cout << "updating tile at " << relativePos.x << ", " << relativePos.y << std::endl;
+
 		UpdateTextureRec(gridBuffer0, Rectangle({ (float)relativePos.x, (float)relativePos.y,(float)TILE_SIZE, (float)TILE_SIZE }), tile.buffer0.data());
+		//UpdateTextureRec(gridBuffer0, Rectangle({ 0, 0,(float)TILE_SIZE, (float)TILE_SIZE }), tileTestData.data());
 
 
 		//open gl way, not working 
@@ -171,17 +182,27 @@ public:
 
 	void prerender() {
 		if (!init) { Init(); }
+		//if (true) { return; }
 
 		BeginTextureMode(renderTexture);
+			BeginShaderMode(worldRenderer);
+				auto shaderBuffer0 = GetShaderLocation(worldRenderer, "gridBuffer0");
+				SetShaderValueTexture(worldRenderer, shaderBuffer0, gridBuffer0);
 
-		BeginShaderMode(worldRenderer);
-		auto shaderBuffer0 = GetShaderLocation(worldRenderer, "gridBuffer0");
-		SetShaderValueTexture(worldRenderer, shaderBuffer0, gridBuffer0);
+				auto test = GetShaderLocation(worldRenderer, "test");
+				float guh = 0.0;
+				SetShaderValue(worldRenderer, test, &guh, SHADER_UNIFORM_FLOAT);
+				//SetShaderValueTexture(worldRenderer, testData, tileTestData);
+				//uniform sampler2D testData;
 
-		DrawRectangle(0, 0, renderTexture.texture.width, renderTexture.texture.height, WHITE);
+				Vector2 screen;
+				screen.x = GetScreenWidth(); screen.y = GetScreenHeight();
 
-		EndShaderMode();
+				auto screenSizeLoc = GetShaderLocation(worldRenderer, "screenSize");
+				SetShaderValue(worldRenderer, screenSizeLoc, &screen,SHADER_UNIFORM_VEC2);
 
+				DrawRectangle(0, 0, renderTexture.texture.width, renderTexture.texture.height, WHITE);
+			EndShaderMode();
 		EndTextureMode();
 
 
@@ -189,9 +210,10 @@ public:
 
 	void render() {
 		if (!init) { Init(); }
-		if (true) { return; }
+		//if (true) { return; }
 		//BeginShaderMode(worldRenderer);
-			DrawTexture(renderTexture.texture, 0,0, WHITE);
+			//DrawTexture(renderTexture.texture, 0,0, WHITE);
+			DrawTexture(renderTexture.texture, 0, 0, WHITE);
 		//EndShaderMode();
 		
 	}
