@@ -192,6 +192,10 @@ public:
 				auto test = GetShaderLocation(worldRenderer, "test");
 				float guh = 0.0;
 				SetShaderValue(worldRenderer, test, &guh, SHADER_UNIFORM_FLOAT);
+				auto timeLoc = GetShaderLocation(worldRenderer, "time");
+				float time = (float)GetTime();
+				SetShaderValue(worldRenderer, timeLoc, &time, SHADER_UNIFORM_FLOAT);
+				
 				//SetShaderValueTexture(worldRenderer, testData, tileTestData);
 				//uniform sampler2D testData;
 
