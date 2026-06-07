@@ -8,7 +8,7 @@
 
 #define WATER_BLUE       CLITERAL(Color){ 50, 171, 251, 150 } 
 #define WATER_BLUE_2     CLITERAL(Color){ 0, 101, 221, 130 } 
-#define EMPTY_COLOR      CLITERAL(Color){ 0, 0, 0, 100 }
+#define EMPTY_COLOR      CLITERAL(Color){ 0, 0, 0, 0 }
 
 const float w_gravity = 0.2f;
 const float w_drag = 2;
@@ -30,6 +30,7 @@ struct Particle {
     short        should_update = 1;
     short        is_freefalling = 1;
 	short        fusion = 0;
+    float        temp;
 };
 
 Color GenerateParticleColor(ParticleType type);

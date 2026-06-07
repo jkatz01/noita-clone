@@ -71,11 +71,14 @@ void main()
 
 
     //Show pixel color accurately
-    finalColor.r = mod(buffer0.g,256);
-    finalColor.g = (buffer0.g/256 - finalColor.r);
+    finalColor.r = mod(buffer0.g,256.0);
+    finalColor.g = ((buffer0.g - finalColor.r)/256.0);
 
-    finalColor.b = mod(buffer0.b,256);
-    finalColor.a = (buffer0.b/256 - finalColor.b);
+    finalColor.b = mod(buffer0.b,256.0);
+    finalColor.a = ((buffer0.b - finalColor.b)/256.0);
 
     finalColor /= 255;
+    
+    //finalColor = vec4(1.0);
+    //finalColor.a = 1.0;
 }
